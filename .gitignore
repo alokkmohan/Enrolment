@@ -1,28 +1,25 @@
+# Raw data — private, not version controlled
+data/
+outputs/
+OUTPUT/
+
 # Python
-.venv/
+scripts/__pycache__/
 __pycache__/
 *.pyc
 *.pyo
-*.pyd
-.Python
-*.egg-info/
-dist/
-build/
 
-# Raw source data (large Excel input files — not version controlled)
-Enrollment_2022-23_Govt_Matched.xlsx
-Enrollment_2023-24_Govt_Matched.xlsx
-Enrollment_2024-25_Govt_Matched.xlsx
-Enrollment_2025-26_Govt_Matched.xlsx
-Enrolment\ Details\ -\ Class\ Wise\ \ -\ 2022-23.xlsx
-Enrolment\ Details\ -\ Class\ Wise\ All\ Students\ -\ 2023-24.xlsx
-Enrolment_Class_Wise_All_Students\ _AY_2025-26.xlsx
-Enrolment_Details_Class_Wise_All_Students_AY_2024-25.xlsx
-data/enrollment_raw.xlsx
-data/enrollment_govt.xlsx
+# Excel and CSV files (source data)
+*.xlsx
+*.csv
 
-# Old output folder
-OUTPUT/
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
 
 # OS
 .DS_Store

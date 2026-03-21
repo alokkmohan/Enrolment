@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>UP School Enrollment Analysis Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --red:    #e74c3c;
+      --orange: #e67e22;
+      --yellow: #f1c40f;
+      --green:  #27ae60;
+      --blue:   #2980b9;
+      --navy:   #1a3557;
+      --card-bg: #ffffff;
+    }
+    body { background:#f0f4f8; font-family:'Segoe UI',sans-serif; font-size:14px; }
+
+    /* ── Header ── */
+    .dashboard-header {
+      background: linear-gradient(135deg,#1a3557 0%,#2471a3 100%);
+      color:#fff; padding:18px 24px 14px;
+    }
+    .dashboard-header h1 { font-size:1.4rem; font-weight:700; margin:0; }
+    .dashboard-header .meta { font-size:0.78rem; opacity:.8; margin-top:2px; }
+
+    /* ── Nav tabs ── */
+    .nav-tabs { border-bottom:2px solid #dee2e6; background:#fff; padding:0 16px; flex-wrap:nowrap; overflow-x:auto; }
+    .nav-tabs .nav-link { font-size:.8rem; font-weight:600; color:#555; padding:10px 14px; white-space:nowrap; border:none; border-bottom:3px solid transparent; }
+    .nav-tabs .nav-link.active { color:var(--navy); border-bottom-color:var(--navy); }
+
+    /* ── KPI Cards ── */
+    .kpi-card { background:var(--card-bg); border-radius:10px; padding:14px 16px; box-shadow:0 2px 6px rgba(0,0,0,.07); height:100%; }
+    .kpi-card .kpi-label { font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:#777; margin-bottom:4px; }
+    .kpi-card .kpi-value { font-size:1.6rem; font-weight:700; line-height:1; }
+    .kpi-card .kpi-sub { font-size:.72rem; color:#888; margin-top:4px; }
+    .kpi-red    .kpi-value { color:var(--red); }
+    .kpi-green  .kpi-value { color:var(--green); }
+    .kpi-orange .kpi-value { color:var(--orange); }
+    .kpi-blue   .kpi-value { color:var(--blue); }
+    .kpi-navy   .kpi-value { color:var(--navy); }
+
+    /* ── Section cards ── */
+    .section-card { background:#fff; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,.07); padding:18px 20px; margin-bottom:18px; }
+    .section-title { font-size:.85rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--navy); margin-bottom:14px; border-left:4px solid var(--navy); padding-left:10px; }
+
+    /* ── Zone badges ── */
+    .zone-badge { border-radius:8px; padding:10px 16px; text-align:center; color:#fff; }
+    .zone-RED    { background:var(--red); }
+    .zone-ORANGE { background:var(--orange); }
+    .zone-YELLOW { background:#d4ac0d; color:#fff; }
+    .zone-GREEN  { background:var(--green); }
+    .zone-badge .zn { font-size:1.6rem; font-weight:700; }
+    .zone-badge .zl { font-size:.7rem; opacity:.9; }
+
+    /* ── School type cards ── */
+    .stype-card { border-radius:8px; padding:12px 14px; border-left:5px solid; margin-bottom:8px; background:#fafbfc; }
+    .stype-Thriving { border-color:var(--green); }
+    .stype-Growing  { border-color:var(--blue); }
+    .stype-Mixed    { border-color:var(--orange); }
+    .stype-Declining{ border-color:var(--red); }
+    .stype-Critical { border-color:#900; }
+
+    /* ── Risk badge ── */
+    .risk-HIGH   { background:#fde8e8; color:#a93226; font-weight:700; border-radius:4px; padding:2px 7px; font-size:.75rem; }
+    .risk-MEDIUM { background:#fef5e7; color:#935116; font-weight:600; border-radius:4px; padding:2px 7px; font-size:.75rem; }
+    .risk-LOW    { background:#eafaf1; color:#1e8449; font-weight:600; border-radius:4px; padding:2px 7px; font-size:.75rem; }
+
+    /* ── Health tag ── */
+    .health-Strong   { color:var(--green); font-weight:700; }
+    .health-Moderate { color:var(--orange); font-weight:600; }
+    .health-Weak     { color:var(--red); font-weight:700; }
+
+    /* ── Alert severity ── */
+    .sev-CRITICAL { background:#e74c3c; color:#fff; border-radius:4px; padding:2px 8px; font-size:.72rem; font-weight:700; }
+    .sev-HIGH     { background:#e67e22; color:#fff; border-radius:4px; padding:2px 8px; font-size:.72rem; font-weight:700; }
+    .sev-MEDIUM   { background:#f1c40f; color:#333; border-radius:4px; padding:2px 8px; font-size:.72rem; }
+    .sev-LOW      { background:#27ae60; color:#fff; border-radius:4px; padding:2px 8px; font-size:.72rem; }
+
+    /* ── Tables ── */
+    .dash-table { width:100%; border-collapse:collapse; font-size:.8rem; }
+    .dash-table thead th { background:var(--navy); color:#fff; padding:8px 10px; font-size:.75rem; font-weight:600; white-space:nowrap; }
+    .dash-table tbody tr:nth-child(even) { background:#f8f9fa; }
+    .dash-table tbody tr:hover { background:#e8f0fe; }
+    .dash-table td { padding:7px 10px; vertical-align:middle; border-bottom:1px solid #eee; }
+    .table-scroll { overflow-x:auto; }
+
+    /* ── Search/filter bar ── */
+    .filter-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+    .filter-bar input, .filter-bar select { font-size:.8rem; padding:5px 10px; border:1px solid #ddd; border-radius:6px; }
+    .filter-bar input { flex:1; min-width:160px; }
+
+    /* ── Growth arrow ── */
+    .grow-pos { color:var(--green); }
+    .grow-neg { color:var(--red); }
+
+    /* ── Pagination ── */
+    .pagination-bar { display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:.78rem; color:#666; }
+    .page-btn { background:#fff; border:1px solid #ddd; border-radius:5px; padding:3px 10px; cursor:pointer; font-size:.78rem; }
+    .page-btn:hover { background:#e8f0fe; }
+    .page-btn:disabled { opacity:.4; cursor:default; }
+
+    /* ── Loading ── */
+    #loading { position:fixed; inset:0; background:rgba(26,53,87,.93); display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:9999; color:#fff; }
+    #loading .spinner-border { width:3rem; height:3rem; }
+    #loading p { margin-top:14px; font-size:1rem; opacity:.9; }
+
+    /* ── Trend sparkline text ── */
+    .trend-tag { font-size:.72rem; padding:2px 6px; border-radius:3px; background:#e8f0fe; color:#1a3557; }
+
+    /* ── Responsive ── */
+    @media(max-width:576px) { .kpi-card .kpi-value { font-size:1.2rem; } }
+  </style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loading">
+  <div class="spinner-border text-light"></div>
+  <p>Loading dashboard data…</p>
+</div>
+
+<!-- Header -->
+<div class="dashboard-header">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div>
+      <h1><i class="bi bi-bar-chart-fill me-2"></i>UP School Enrollment Analysis</h1>
+      <div class="meta">Uttar Pradesh Government Schools &nbsp;|&nbsp; 2022-23 to 2025-26 &nbsp;|&nbsp; <span id="hdr-date"></span></div>
+    </div>
+    <div class="text-end">
+      <div style="font-size:.8rem;opacity:.8;">Last Updated</div>
+      <div style="font-size:.9rem;font-weight:600;" id="hdr-gen"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Nav Tabs -->
+<ul class="nav nav-tabs mb-0" id="mainTabs">
+  <li class="nav-item"><button class="nav-link active" data-tab="overview"><i class="bi bi-grid me-1"></i>Overview</button></li>
+  <li class="nav-item"><button class="nav-link" data-tab="districts"><i class="bi bi-map me-1"></i>Districts</button></li>
+  <li class="nav-item"><button class="nav-link" data-tab="blocks"><i class="bi bi-hexagon me-1"></i>Blocks</button></li>
+  <li class="nav-item"><button class="nav-link" data-tab="schools"><i class="bi bi-building me-1"></i>Schools</button></li>
+  <li class="nav-item"><button class="nav-link" data-tab="alerts"><i class="bi bi-exclamation-triangle me-1"></i>Alerts</button></li>
+  <li class="nav-item"><button class="nav-link" data-tab="girls"><i class="bi bi-gender-female me-1"></i>Girls</button></li>
+  <li class="nav-item"><button class="nav-link" data-tab="clusters"><i class="bi bi-diagram-3 me-1"></i>Clusters</button></li>
+</ul>
+
+<!-- Main Content -->
+<div class="container-fluid px-3 py-3">
+
+  <!-- ══ TAB: OVERVIEW ══════════════════════════════════════════════════ -->
+  <div id="tab-overview">
+
+    <!-- KPI row 1 -->
+    <div class="row g-2 mb-2">
+      <div class="col-6 col-md-3 col-xl-2"><div class="kpi-card kpi-navy"><div class="kpi-label">Total Schools</div><div class="kpi-value" id="kpi-schools">—</div><div class="kpi-sub" id="kpi-coverage">—</div></div></div>
+      <div class="col-6 col-md-3 col-xl-2"><div class="kpi-card kpi-green"><div class="kpi-label">Enrollment 2025-26</div><div class="kpi-value" id="kpi-enroll26">—</div><div class="kpi-sub" id="kpi-growth">—</div></div></div>
+      <div class="col-6 col-md-3 col-xl-2"><div class="kpi-card kpi-blue"><div class="kpi-label">Growing Schools</div><div class="kpi-value" id="kpi-growing">—</div><div class="kpi-sub" id="kpi-growing-pct">—</div></div></div>
+      <div class="col-6 col-md-3 col-xl-2"><div class="kpi-card kpi-orange"><div class="kpi-label">Declining Schools</div><div class="kpi-value" id="kpi-declining">—</div><div class="kpi-sub" id="kpi-declining-pct">—</div></div></div>
+      <div class="col-6 col-md-3 col-xl-2"><div class="kpi-card kpi-red"><div class="kpi-label">HIGH RISK</div><div class="kpi-value" id="kpi-highrisk">—</div><div class="kpi-sub" id="kpi-medrisk">—</div></div></div>
+      <div class="col-6 col-md-3 col-xl-2"><div class="kpi-card kpi-green"><div class="kpi-label">Model Schools</div><div class="kpi-value" id="kpi-model">—</div><div class="kpi-sub" id="kpi-invest">—</div></div></div>
+    </div>
+    <div class="row g-2 mb-3">
+      <div class="col-6 col-md-3 col-xl-2"><div class="kpi-card kpi-navy"><div class="kpi-label">Girls Ratio</div><div class="kpi-value" id="kpi-girls">—</div><div class="kpi-sub">State avg (current)</div></div></div>
+      <div class="col-6 col-md-3 col-xl-2"><div class="kpi-card kpi-red"><div class="kpi-label">Red Zone Blocks</div><div class="kpi-value" id="kpi-redblocks">—</div><div class="kpi-sub">of <span id="kpi-totalblocks">—</span> blocks</div></div></div>
+      <div class="col-6 col-md-3 col-xl-2"><div class="kpi-card kpi-orange"><div class="kpi-label">Closure Risk</div><div class="kpi-value" id="kpi-closure">—</div><div class="kpi-sub">schools at risk</div></div></div>
+      <div class="col-6 col-md-3 col-xl-2"><div class="kpi-card kpi-blue"><div class="kpi-label">Investment Worthy</div><div class="kpi-value" id="kpi-invest2">—</div><div class="kpi-sub">high potential schools</div></div></div>
+      <div class="col-6 col-md-3 col-xl-2"><div class="kpi-card kpi-navy"><div class="kpi-label">Districts</div><div class="kpi-value" id="kpi-districts">—</div><div class="kpi-sub">across UP</div></div></div>
+      <div class="col-6 col-md-3 col-xl-2"><div class="kpi-card kpi-navy"><div class="kpi-label">Critical Alerts</div><div class="kpi-value" id="kpi-alerts">—</div><div class="kpi-sub">alert types</div></div></div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="row g-3 mb-3">
+      <div class="col-12 col-md-6 col-xl-4">
+        <div class="section-card" style="height:280px">
+          <div class="section-title">Enrollment Trend (2022-26)</div>
+          <canvas id="chart-trend" style="max-height:210px"></canvas>
+        </div>
+      </div>
+      <div class="col-12 col-md-6 col-xl-4">
+        <div class="section-card" style="height:280px">
+          <div class="section-title">Risk Distribution</div>
+          <canvas id="chart-risk" style="max-height:210px"></canvas>
+        </div>
+      </div>
+      <div class="col-12 col-md-12 col-xl-4">
+        <div class="section-card" style="height:280px">
+          <div class="section-title">Block Zones</div>
+          <div class="row g-2 mt-1" id="zone-boxes"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- School Types + Top20 -->
+    <div class="row g-3">
+      <div class="col-12 col-lg-5">
+        <div class="section-card">
+          <div class="section-title">School Type Performance</div>
+          <div id="stype-cards"></div>
+        </div>
+      </div>
+      <div class="col-12 col-lg-7">
+        <div class="section-card">
+          <div class="section-title">
+            <span id="top20-tab-label">Top 20 Growth Schools</span>
+            <div class="float-end d-flex gap-1" style="margin-top:-4px">
+              <button class="page-btn active" onclick="switchTop20('growth',this)">Growth</button>
+              <button class="page-btn" onclick="switchTop20('decline',this)">Decline</button>
+              <button class="page-btn" onclick="switchTop20('risk',this)">High Risk</button>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="dash-table" id="top20-table">
+              <thead><tr><th>#</th><th>School</th><th>District</th><th>Type</th><th>Enrollment</th><th>Growth%</th></tr></thead>
+              <tbody id="top20-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /overview -->
+
+  <!-- ══ TAB: DISTRICTS ════════════════════════════════════════════════ -->
+  <div id="tab-districts" class="d-none">
+    <div class="section-card">
+      <div class="section-title">District Performance (75 Districts)</div>
+      <div class="filter-bar">
+        <input type="text" id="dist-search" placeholder="Search district…" oninput="filterDistricts()"/>
+        <select id="dist-health" onchange="filterDistricts()">
+          <option value="">All Health Tags</option>
+          <option>Strong</option><option>Moderate</option><option>Weak</option>
+        </select>
+      </div>
+      <div class="table-scroll">
+        <table class="dash-table">
+          <thead><tr>
+            <th>#</th><th>District</th><th>Schools</th>
+            <th>Enroll 22-23</th><th>Enroll 25-26</th><th>Growth%</th>
+            <th>Girls Growth%</th><th>Red Blocks</th><th>Health</th>
+          </tr></thead>
+          <tbody id="dist-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination-bar">
+        <span id="dist-info"></span>
+        <div class="d-flex gap-1">
+          <button class="page-btn" id="dist-prev" onclick="distPage(-1)">&#8592; Prev</button>
+          <button class="page-btn" id="dist-next" onclick="distPage(+1)">Next &#8594;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: BLOCKS ═══════════════════════════════════════════════════ -->
+  <div id="tab-blocks" class="d-none">
+    <div class="section-card">
+      <div class="section-title">Block Health (844 Blocks)</div>
+      <div class="filter-bar">
+        <input type="text" id="block-search" placeholder="Search block or district…" oninput="filterBlocks()"/>
+        <select id="block-zone" onchange="filterBlocks()">
+          <option value="">All Zones</option>
+          <option value="RED">RED</option>
+          <option value="ORANGE">ORANGE</option>
+          <option value="YELLOW">YELLOW</option>
+          <option value="GREEN">GREEN</option>
+        </select>
+      </div>
+      <div class="table-scroll">
+        <table class="dash-table">
+          <thead><tr>
+            <th>District</th><th>Block</th><th>Schools</th>
+            <th>Growing</th><th>Declining</th><th>Low Cont.</th>
+            <th>Girls Dec.</th><th>Avg Growth%</th><th>Zone</th>
+          </tr></thead>
+          <tbody id="block-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination-bar">
+        <span id="block-info"></span>
+        <div class="d-flex gap-1">
+          <button class="page-btn" id="block-prev" onclick="blockPage(-1)">&#8592; Prev</button>
+          <button class="page-btn" id="block-next" onclick="blockPage(+1)">Next &#8594;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: SCHOOLS ═══════════════════════════════════════════════════ -->
+  <div id="tab-schools" class="d-none">
+    <div class="section-card">
+      <div class="section-title">All Schools (2,492)</div>
+      <div class="filter-bar">
+        <input type="text" id="sch-search" placeholder="Search by name, school ID, district, block…" oninput="filterSchools()"/>
+        <select id="sch-risk" onchange="filterSchools()">
+          <option value="">All Risk Levels</option>
+          <option value="HIGH RISK">HIGH RISK</option>
+          <option value="MEDIUM RISK">MEDIUM RISK</option>
+          <option value="LOW RISK">LOW RISK</option>
+        </select>
+        <select id="sch-type" onchange="filterSchools()">
+          <option value="">All School Types</option>
+        </select>
+        <select id="sch-trend" onchange="filterSchools()">
+          <option value="">All Trends</option>
+          <option>Consistent Growth</option>
+          <option>Volatile</option>
+          <option>Recovery</option>
+          <option>Stable</option>
+          <option>Consistent Decline</option>
+        </select>
+      </div>
+      <div class="table-scroll">
+        <table class="dash-table">
+          <thead><tr>
+            <th>School ID</th><th>School Name</th><th>District</th><th>Block</th>
+            <th>Type</th><th>Enroll 25-26</th><th>Growth%</th>
+            <th>Risk</th><th>Girls Ratio</th><th>Alerts</th>
+          </tr></thead>
+          <tbody id="sch-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination-bar">
+        <span id="sch-info"></span>
+        <div class="d-flex gap-1">
+          <button class="page-btn" id="sch-prev" onclick="schPage(-1)">&#8592; Prev</button>
+          <button class="page-btn" id="sch-next" onclick="schPage(+1)">Next &#8594;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: ALERTS ═══════════════════════════════════════════════════ -->
+  <div id="tab-alerts" class="d-none">
+    <!-- Warning summary -->
+    <div class="section-card mb-3">
+      <div class="section-title">Alert Type Summary</div>
+      <div class="table-scroll">
+        <table class="dash-table">
+          <thead><tr><th>Alert ID</th><th>Alert Type</th><th>Severity</th><th>Schools</th><th>Districts</th><th>Blocks</th></tr></thead>
+          <tbody id="warn-summary-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Per-school early warnings -->
+    <div class="section-card">
+      <div class="section-title">Per-School Early Warnings (<span id="warn-count">—</span>)</div>
+      <div class="filter-bar">
+        <input type="text" id="warn-search" placeholder="Search school, district, block…" oninput="filterWarnings()"/>
+        <select id="warn-type" onchange="filterWarnings()">
+          <option value="">All Alert Types</option>
+        </select>
+        <select id="warn-sev" onchange="filterWarnings()">
+          <option value="">All Severities</option>
+          <option>CRITICAL</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option>
+        </select>
+      </div>
+      <div class="table-scroll">
+        <table class="dash-table">
+          <thead><tr>
+            <th>District</th><th>Block</th><th>School</th>
+            <th>Alert</th><th>Severity</th><th>Year</th>
+          </tr></thead>
+          <tbody id="warn-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination-bar">
+        <span id="warn-info"></span>
+        <div class="d-flex gap-1">
+          <button class="page-btn" id="warn-prev" onclick="warnPage(-1)">&#8592; Prev</button>
+          <button class="page-btn" id="warn-next" onclick="warnPage(+1)">Next &#8594;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: GIRLS ════════════════════════════════════════════════════ -->
+  <div id="tab-girls" class="d-none">
+    <div class="row g-3">
+      <!-- Girls chart -->
+      <div class="col-12 col-lg-5">
+        <div class="section-card">
+          <div class="section-title">Girls Enrollment Growth by District (Top 20)</div>
+          <canvas id="chart-girls" style="max-height:360px"></canvas>
+        </div>
+      </div>
+      <!-- Girls district table -->
+      <div class="col-12 col-lg-7">
+        <div class="section-card">
+          <div class="section-title">District-wise Girls Growth</div>
+          <div class="filter-bar">
+            <input type="text" id="girls-search" placeholder="Search district…" oninput="filterGirls()"/>
+          </div>
+          <div class="table-scroll">
+            <table class="dash-table">
+              <thead><tr>
+                <th>#</th><th>District</th><th>Girls Growth%</th><th>Boys Growth%</th><th>Girls Declining Schools</th>
+              </tr></thead>
+              <tbody id="girls-body"></tbody>
+            </table>
+          </div>
+          <div class="pagination-bar">
+            <span id="girls-info"></span>
+            <div class="d-flex gap-1">
+              <button class="page-btn" id="girls-prev" onclick="girlsPage(-1)">&#8592; Prev</button>
+              <button class="page-btn" id="girls-next" onclick="girlsPage(+1)">Next &#8594;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Girls ladder summary (school-level stats) -->
+    <div class="section-card mt-3">
+      <div class="section-title">Girls Enrollment Progression — School Summary</div>
+      <div class="filter-bar">
+        <input type="text" id="ladder-search" placeholder="Search school or district…" oninput="filterLadder()"/>
+        <select id="ladder-tag" onchange="filterLadder()">
+          <option value="">All Ladder Tags</option>
+        </select>
+      </div>
+      <div class="table-scroll">
+        <table class="dash-table">
+          <thead><tr>
+            <th>District</th><th>Block</th><th>School</th>
+            <th>Girls C8</th><th>Girls C12</th>
+            <th>Progression%</th><th>Weakest Step</th><th>Ladder Tag</th>
+          </tr></thead>
+          <tbody id="ladder-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination-bar">
+        <span id="ladder-info"></span>
+        <div class="d-flex gap-1">
+          <button class="page-btn" id="ladder-prev" onclick="ladderPage(-1)">&#8592; Prev</button>
+          <button class="page-btn" id="ladder-next" onclick="ladderPage(+1)">Next &#8594;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB: CLUSTERS ═════════════════════════════════════════════════ -->
+  <div id="tab-clusters" class="d-none">
+    <div class="section-card">
+      <div class="section-title">Same-Condition School Clusters (56 groups, 3+ schools each)</div>
+      <p style="font-size:.8rem;color:#666;margin-bottom:12px;">
+        Schools sharing the same Risk Level + Trend + Enrollment Pattern + School Type — systemic/geographic patterns.
+      </p>
+      <div class="filter-bar">
+        <select id="cl-risk" onchange="filterClusters()"><option value="">All Risk Levels</option>
+          <option value="HIGH RISK">HIGH RISK</option><option value="MEDIUM RISK">MEDIUM RISK</option><option value="LOW RISK">LOW RISK</option>
+        </select>
+        <select id="cl-type" onchange="filterClusters()"><option value="">All School Types</option></select>
+      </div>
+      <div class="table-scroll">
+        <table class="dash-table">
+          <thead><tr>
+            <th>Risk Level</th><th>Trend</th><th>Enroll Pattern</th><th>School Type</th>
+            <th>Schools</th><th>Avg Enrollment</th><th>Avg Growth%</th><th>Avg Risk Score</th>
+            <th>Sample Districts</th>
+          </tr></thead>
+          <tbody id="cluster-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ══ Global data ══
+let D = {};
+
+// ══ Pagination state ══
+const PS = {
+  dist:   { page:0, size:20, data:[], filtered:[] },
+  block:  { page:0, size:25, data:[], filtered:[] },
+  sch:    { page:0, size:30, data:[], filtered:[] },
+  warn:   { page:0, size:30, data:[], filtered:[] },
+  girls:  { page:0, size:20, data:[], filtered:[] },
+  ladder: { page:0, size:25, data:[], filtered:[] },
+};
+
+// ══ Load data ══
+fetch('./dashboard_data.json')
+  .then(r => r.json())
+  .then(data => {
+    D = data;
+    document.getElementById('loading').style.display = 'none';
+    initDashboard();
+  })
+  .catch(err => {
+    document.getElementById('loading').innerHTML =
+      `<div class="text-center"><i class="bi bi-exclamation-circle" style="font-size:3rem"></i><p class="mt-3">Failed to load data: ${err.message}</p></div>`;
+  });
+
+// ══ Init ══
+function initDashboard() {
+  const kpi = D.state_kpis || {};
+  const meta = D.metadata || {};
+
+  // Header
+  document.getElementById('hdr-date').textContent =
+    `Analysis: 2022-23 to 2025-26`;
+  document.getElementById('hdr-gen').textContent =
+    meta.generated_at || kpi.Report_Date || '';
+
+  // KPIs
+  setText('kpi-schools',   fmt(kpi.Total_Schools));
+  setText('kpi-coverage',  `${fmt(kpi.Total_Districts)} districts, ${fmt(kpi.Total_Blocks)} blocks`);
+  setText('kpi-enroll26',  fmtL(kpi.Total_Enrollment_2526));
+  setText('kpi-growth',    `${kpi.Overall_Enrollment_Growth_pct >= 0 ? '+' : ''}${kpi.Overall_Enrollment_Growth_pct}% (4-yr)`);
+  setText('kpi-growing',   fmt(kpi.Growing_Schools));
+  setText('kpi-growing-pct', pct(kpi.Growing_Schools, kpi.Total_Schools) + ' of total');
+  setText('kpi-declining', fmt(kpi.Declining_Schools));
+  setText('kpi-declining-pct', pct(kpi.Declining_Schools, kpi.Total_Schools) + ' of total');
+  setText('kpi-highrisk',  fmt(kpi.High_Risk_Schools));
+  setText('kpi-medrisk',   fmt(kpi.Medium_Risk_Schools) + ' Medium Risk');
+  setText('kpi-model',     fmt(kpi.Model_Schools));
+  setText('kpi-invest',    fmt(kpi.Investment_Worthy_Schools) + ' investment worthy');
+  setText('kpi-girls',     (kpi.Avg_Girls_Ratio_pct || 0).toFixed(1) + '%');
+  setText('kpi-redblocks', fmt(kpi.Red_Zone_Blocks));
+  setText('kpi-totalblocks', fmt(kpi.Total_Blocks));
+  setText('kpi-closure',   fmt(kpi.Closure_Risk_Schools));
+  setText('kpi-invest2',   fmt(kpi.Investment_Worthy_Schools));
+  setText('kpi-districts', fmt(kpi.Total_Districts));
+  setText('kpi-alerts',    fmt(kpi.Critical_Alert_Types));
+
+  // Charts
+  buildTrendChart();
+  buildRiskChart();
+  buildZoneBoxes();
+  buildSchoolTypeCards();
+  buildTop20('growth');
+
+  // Prepare table data
+  PS.dist.data   = PS.dist.filtered   = (D.district_data || []).slice();
+  PS.block.data  = PS.block.filtered  = (D.block_health  || []).slice();
+  PS.sch.data    = PS.sch.filtered    = (D.all_schools   || []).slice();
+  PS.warn.data   = PS.warn.filtered   = (D.early_warnings|| []).slice();
+  PS.girls.data  = PS.girls.filtered  = (D.gender_data   || []).slice();
+  PS.ladder.data = PS.ladder.filtered = (D.girls_ladder  || []).filter(r => +r.Girls_C8 > 0);
+
+  // Render tables
+  renderDist(); renderBlock(); renderSchools();
+  renderWarnings(); renderGirls(); renderLadder();
+
+  // Populate filter dropdowns
+  populateSchoolTypeFilter('sch-type', D.filter_options?.school_types || []);
+  populateSchoolTypeFilter('cl-type',  D.filter_options?.school_types || []);
+  populateAlertTypes();
+  populateLadderTags();
+
+  // Warning count
+  setText('warn-count', fmt(PS.warn.data.length));
+
+  // Warning summary
+  renderWarnSummary();
+
+  // Girls chart
+  buildGirlsChart();
+
+  // Clusters
+  renderClusters();
+
+  // Nav tab clicks
+  document.querySelectorAll('[data-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('[id^="tab-"]').forEach(t => t.classList.add('d-none'));
+      document.getElementById('tab-' + btn.dataset.tab).classList.remove('d-none');
+    });
+  });
+}
+
+// ══ Charts ══
+function buildTrendChart() {
+  const trend = D.enrollment_trend || [];
+  new Chart(document.getElementById('chart-trend'), {
+    type: 'line',
+    data: {
+      labels: trend.map(r => r.year),
+      datasets: [{
+        label: 'Total Enrollment',
+        data: trend.map(r => r.total),
+        borderColor: '#2471a3', backgroundColor: 'rgba(36,113,163,.12)',
+        borderWidth: 2.5, pointRadius: 5, fill: true, tension: .35
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{
+        y:{ ticks:{ callback: v => (v/1000).toFixed(0)+'K' }, grid:{color:'#f0f0f0'} },
+        x:{ grid:{display:false} }
+      }
+    }
+  });
+}
+
+function buildRiskChart() {
+  const rd = D.risk_distribution || {};
+  const keys = ['HIGH RISK','MEDIUM RISK','LOW RISK'];
+  const vals  = keys.map(k => rd[k] || 0);
+  new Chart(document.getElementById('chart-risk'), {
+    type: 'doughnut',
+    data: {
+      labels: keys,
+      datasets: [{ data: vals, backgroundColor:['#e74c3c','#e67e22','#27ae60'], borderWidth:2 }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{ position:'bottom', labels:{ font:{size:11}, boxWidth:14 } },
+        tooltip:{ callbacks:{ label: ctx => ` ${ctx.label}: ${fmt(ctx.raw)}` } }
+      },
+      cutout:'65%'
+    }
+  });
+}
+
+function buildZoneBoxes() {
+  const z = D.zone_summary || {};
+  const order = ['RED','ORANGE','YELLOW','GREEN'];
+  const labels = { RED:'Critical / Red Zone', ORANGE:'At Risk / Orange', YELLOW:'Moderate / Yellow', GREEN:'Healthy / Green' };
+  let html = '';
+  order.forEach(k => {
+    if (z[k] !== undefined)
+      html += `<div class="col-6"><div class="zone-badge zone-${k}"><div class="zn">${z[k]}</div><div class="zl">${k}</div><div class="zl" style="font-size:.65rem">${labels[k]}</div></div></div>`;
+  });
+  document.getElementById('zone-boxes').innerHTML = html;
+}
+
+function buildSchoolTypeCards() {
+  const types = D.school_type_data || [];
+  let html = '';
+  types.forEach(t => {
+    const g = parseFloat(t.Overall_Growth_pct);
+    const tag = t.Type_Health_Tag || 'Mixed';
+    html += `<div class="stype-card stype-${tag}">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <strong style="font-size:.82rem">${t.School_Type}</strong>
+          <span class="text-muted ms-2" style="font-size:.72rem">(${t.Class_Range || ''})</span>
+        </div>
+        <span class="badge rounded-pill" style="background:${tagColor(tag)};color:#fff;font-size:.7rem">${tag}</span>
+      </div>
+      <div class="d-flex gap-3 mt-1" style="font-size:.75rem;color:#555">
+        <span><b>${fmt(t.Total_Schools)}</b> schools</span>
+        <span class="${g>=0?'grow-pos':'grow-neg'}"><b>${g>=0?'+':''}${g}%</b> growth</span>
+        <span><b>${t.Growing_pct}%</b> growing</span>
+        <span>Girls: <b>${(+t.Avg_Girls_Ratio*100).toFixed(0)}%</b></span>
+      </div>
+    </div>`;
+  });
+  document.getElementById('stype-cards').innerHTML = html;
+}
+
+function tagColor(tag) {
+  return {Thriving:'#27ae60',Growing:'#2980b9',Mixed:'#e67e22',Declining:'#e74c3c',Critical:'#900'}[tag] || '#888';
+}
+
+// ══ Top 20 ══
+function buildTop20(mode) {
+  const labels = {growth:'Top 20 Growth Schools', decline:'Top 20 Declining Schools', risk:'Top 20 High Risk Schools'};
+  setText('top20-tab-label', labels[mode]);
+  const data = { growth: D.top20_growth, decline: D.top20_decline, risk: D.high_risk_schools }[mode] || [];
+  const rows = data.slice(0,20);
+  let html = '';
+  rows.forEach((r,i) => {
+    const g = parseFloat(r.Overall_Growth_pct);
+    const e = r.Enroll_2526 || r.Total_2526 || '—';
+    const rl = r.Risk_Level || '';
+    html += `<tr>
+      <td style="font-weight:700;color:#888">${i+1}</td>
+      <td style="max-width:220px;white-space:normal;font-size:.75rem">${r.school_name || r.School_Name || ''}</td>
+      <td style="font-size:.75rem">${r.district || r.District || ''}</td>
+      <td style="font-size:.72rem">${r.School_Type || ''}</td>
+      <td>${fmt(e)}</td>
+      <td class="${g>=0?'grow-pos':'grow-neg'}" style="font-weight:700">${isNaN(g)?'—':(g>=0?'+':'')+g.toFixed(1)+'%'}</td>
+    </tr>`;
+  });
+  document.getElementById('top20-body').innerHTML = html;
+}
+
+function switchTop20(mode, btn) {
+  document.querySelectorAll('.section-card .page-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildTop20(mode);
+}
+
+// ══ Helpers ══
+function setText(id, v) { const el = document.getElementById(id); if(el) el.textContent = v; }
+function fmt(n) { if(n===null||n===undefined||n==='') return '—'; return (+n).toLocaleString('en-IN'); }
+function fmtL(n) { if(!n) return '—'; const v=+n; if(v>=100000) return (v/100000).toFixed(2)+'L'; return fmt(v); }
+function pct(a,b) { if(!b) return '—'; return ((+a/+b)*100).toFixed(1)+'%'; }
+function fmtG(v) { const n=parseFloat(v); if(isNaN(n)) return '—'; const c=n>=0?'grow-pos':'grow-neg'; return `<span class="${c}">${n>=0?'+':''}${n.toFixed(1)}%</span>`; }
+function riskBadge(r) {
+  if(!r) return '';
+  const k = r.includes('HIGH')?'HIGH':r.includes('MEDIUM')?'MEDIUM':'LOW';
+  return `<span class="risk-${k}">${r}</span>`;
+}
+function sevBadge(s) { return `<span class="sev-${s||'LOW'}">${s||''}</span>`; }
+function zoneBadge(z) {
+  const c={RED:var_red,ORANGE:var_orange,YELLOW:'#b7950b',GREEN:var_green}[z]||'#888';
+  return `<span style="background:${c};color:#fff;border-radius:4px;padding:2px 8px;font-size:.72rem;font-weight:700">${z||'—'}</span>`;
+}
+const var_red='#e74c3c',var_orange='#e67e22',var_green='#27ae60';
+
+function healthTag(h) {
+  const c={Strong:'health-Strong',Moderate:'health-Moderate',Weak:'health-Weak'}[h]||'';
+  return `<span class="${c}">${h||'—'}</span>`;
+}
+
+// ══ District table ══
+function renderDist() {
+  const { filtered, page, size } = PS.dist;
+  const start = page * size, end = Math.min(start+size, filtered.length);
+  let html = '';
+  filtered.slice(start, end).forEach((r,i) => {
+    html += `<tr>
+      <td style="font-weight:700;color:#888">${r.District_Rank || start+i+1}</td>
+      <td style="font-weight:600">${r.District||''}</td>
+      <td>${r.Total_Schools||''}</td>
+      <td>${fmt(r.Enroll_2223)}</td>
+      <td>${fmt(r.Enroll_2526)}</td>
+      <td>${fmtG(r.Overall_Growth_pct)}</td>
+      <td>${fmtG(r.Girls_Growth_pct)}</td>
+      <td>${r.Red_Blocks||0}</td>
+      <td>${healthTag(r.District_Health_Tag)}</td>
+    </tr>`;
+  });
+  document.getElementById('dist-body').innerHTML = html;
+  document.getElementById('dist-info').textContent = `${start+1}–${end} of ${filtered.length}`;
+  document.getElementById('dist-prev').disabled = page===0;
+  document.getElementById('dist-next').disabled = end>=filtered.length;
+}
+
+function filterDistricts() {
+  const q = document.getElementById('dist-search').value.toLowerCase();
+  const h = document.getElementById('dist-health').value;
+  PS.dist.filtered = PS.dist.data.filter(r =>
+    (!q || (r.District||'').toLowerCase().includes(q)) &&
+    (!h || r.District_Health_Tag===h)
+  );
+  PS.dist.page = 0;
+  renderDist();
+}
+function distPage(d) { PS.dist.page += d; renderDist(); }
+
+// ══ Block table ══
+function renderBlock() {
+  const { filtered, page, size } = PS.block;
+  const start = page * size, end = Math.min(start+size, filtered.length);
+  let html = '';
+  filtered.slice(start, end).forEach(r => {
+    html += `<tr>
+      <td>${r.District||''}</td>
+      <td style="font-weight:600">${r.Block||''}</td>
+      <td>${r.Total_Schools||''}</td>
+      <td class="grow-pos">${r.Growth_Schools||0}</td>
+      <td class="grow-neg">${r.Decline_Schools||0}</td>
+      <td>${r.Low_Continuity_Schools||0}</td>
+      <td>${r.Girls_Declining_Schools||0}</td>
+      <td>${fmtG(r.Avg_Growth_pct)}</td>
+      <td>${zoneBadge(r.Block_Zone)}</td>
+    </tr>`;
+  });
+  document.getElementById('block-body').innerHTML = html;
+  document.getElementById('block-info').textContent = `${start+1}–${end} of ${filtered.length}`;
+  document.getElementById('block-prev').disabled = page===0;
+  document.getElementById('block-next').disabled = end>=filtered.length;
+}
+
+function filterBlocks() {
+  const q = document.getElementById('block-search').value.toLowerCase();
+  const z = document.getElementById('block-zone').value;
+  PS.block.filtered = PS.block.data.filter(r =>
+    (!q || (r.Block||'').toLowerCase().includes(q) || (r.District||'').toLowerCase().includes(q)) &&
+    (!z || r.Block_Zone===z)
+  );
+  PS.block.page = 0;
+  renderBlock();
+}
+function blockPage(d) { PS.block.page += d; renderBlock(); }
+
+// ══ Schools table ══
+function renderSchools() {
+  const { filtered, page, size } = PS.sch;
+  const start = page * size, end = Math.min(start+size, filtered.length);
+  let html = '';
+  filtered.slice(start, end).forEach(r => {
+    const gr = parseFloat(r.Girls_Ratio_Current);
+    html += `<tr>
+      <td style="font-size:.72rem;font-family:monospace">${r.school_id||''}</td>
+      <td style="max-width:200px;white-space:normal;font-size:.75rem">${r.school_name||''}</td>
+      <td style="font-size:.75rem">${r.district||''}</td>
+      <td style="font-size:.75rem">${r.block||''}</td>
+      <td style="font-size:.72rem">${r.School_Type||''}</td>
+      <td>${fmt(r.Enroll_2526)}</td>
+      <td>${fmtG(r.Overall_Growth_pct)}</td>
+      <td>${riskBadge(r.Risk_Level)}</td>
+      <td>${isNaN(gr)?'—':(gr*100).toFixed(0)+'%'}</td>
+      <td style="font-size:.72rem;color:#e74c3c">${r.Alert_Count>0?r.Active_Alerts||'':''}</td>
+    </tr>`;
+  });
+  document.getElementById('sch-body').innerHTML = html;
+  document.getElementById('sch-info').textContent = `${start+1}–${end} of ${filtered.length}`;
+  document.getElementById('sch-prev').disabled = page===0;
+  document.getElementById('sch-next').disabled = end>=filtered.length;
+}
+
+function filterSchools() {
+  const q  = document.getElementById('sch-search').value.toLowerCase();
+  const rl = document.getElementById('sch-risk').value;
+  const tp = document.getElementById('sch-type').value;
+  const tr = document.getElementById('sch-trend').value;
+  PS.sch.filtered = PS.sch.data.filter(r =>
+    (!q  || (r.school_name||'').toLowerCase().includes(q) ||
+             (r.district||'').toLowerCase().includes(q) ||
+             (r.block||'').toLowerCase().includes(q) ||
+             (r.school_id||'').toLowerCase().includes(q)) &&
+    (!rl || r.Risk_Level===rl) &&
+    (!tp || r.School_Type===tp) &&
+    (!tr || (r.Trend_Tag||'').includes(tr))
+  );
+  PS.sch.page = 0;
+  renderSchools();
+}
+function schPage(d) { PS.sch.page += d; renderSchools(); }
+
+function populateSchoolTypeFilter(id, types) {
+  const el = document.getElementById(id);
+  if(!el) return;
+  types.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t; o.textContent = t;
+    el.appendChild(o);
+  });
+}
+
+// ══ Warnings ══
+function renderWarnSummary() {
+  const data = D.warning_summary || [];
+  let html = '';
+  data.sort((a,b) => {
+    const order = {CRITICAL:0,HIGH:1,MEDIUM:2,LOW:3};
+    return (order[a.Severity]||9) - (order[b.Severity]||9);
+  }).forEach(r => {
+    html += `<tr>
+      <td style="font-weight:700;color:#888">${r.Alert_ID}</td>
+      <td style="font-weight:600">${r.Alert_Type}</td>
+      <td>${sevBadge(r.Severity)}</td>
+      <td style="font-weight:700">${fmt(r.Schools_Affected)}</td>
+      <td>${r.Districts_Affected}</td>
+      <td>${r.Blocks_Affected}</td>
+    </tr>`;
+  });
+  document.getElementById('warn-summary-body').innerHTML = html;
+}
+
+function renderWarnings() {
+  const { filtered, page, size } = PS.warn;
+  const start = page * size, end = Math.min(start+size, filtered.length);
+  let html = '';
+  filtered.slice(start, end).forEach(r => {
+    html += `<tr>
+      <td style="font-size:.75rem">${r.District||''}</td>
+      <td style="font-size:.75rem">${r.Block||''}</td>
+      <td style="max-width:200px;white-space:normal;font-size:.72rem">${r.School_Name||''}</td>
+      <td style="font-size:.75rem;font-weight:600">${r.Alert_Type||''}</td>
+      <td>${sevBadge(r.Severity)}</td>
+      <td style="font-size:.72rem">${r.Year_Triggered||''}</td>
+    </tr>`;
+  });
+  document.getElementById('warn-body').innerHTML = html;
+  document.getElementById('warn-info').textContent = `${start+1}–${end} of ${filtered.length}`;
+  document.getElementById('warn-prev').disabled = page===0;
+  document.getElementById('warn-next').disabled = end>=filtered.length;
+}
+
+function filterWarnings() {
+  const q  = document.getElementById('warn-search').value.toLowerCase();
+  const at = document.getElementById('warn-type').value;
+  const sv = document.getElementById('warn-sev').value;
+  PS.warn.filtered = PS.warn.data.filter(r =>
+    (!q  || (r.School_Name||'').toLowerCase().includes(q) ||
+             (r.District||'').toLowerCase().includes(q) ||
+             (r.Block||'').toLowerCase().includes(q)) &&
+    (!at || r.Alert_Type===at) &&
+    (!sv || r.Severity===sv)
+  );
+  PS.warn.page = 0;
+  renderWarnings();
+}
+function warnPage(d) { PS.warn.page += d; renderWarnings(); }
+
+function populateAlertTypes() {
+  const types = [...new Set((D.early_warnings||[]).map(r=>r.Alert_Type).filter(Boolean))].sort();
+  const el = document.getElementById('warn-type');
+  types.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t; o.textContent = t; el.appendChild(o);
+  });
+}
+
+// ══ Girls ══
+function buildGirlsChart() {
+  const data = (D.gender_data || [])
+    .filter(r => r.Girls_Growth_pct !== null)
+    .sort((a,b) => parseFloat(b.Girls_Growth_pct||0) - parseFloat(a.Girls_Growth_pct||0))
+    .slice(0, 20);
+  new Chart(document.getElementById('chart-girls'), {
+    type: 'bar',
+    data: {
+      labels: data.map(r => r.District),
+      datasets: [{
+        label: 'Girls Growth %',
+        data: data.map(r => parseFloat(r.Girls_Growth_pct||0)),
+        backgroundColor: data.map(r => parseFloat(r.Girls_Growth_pct||0) >= 0 ? 'rgba(39,174,96,.7)' : 'rgba(231,76,60,.7)'),
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{ grid:{color:'#f0f0f0'} }, y:{ ticks:{font:{size:10}} } }
+    }
+  });
+}
+
+function renderGirls() {
+  const { filtered, page, size } = PS.girls;
+  const start = page * size, end = Math.min(start+size, filtered.length);
+  let html = '';
+  filtered.slice(start, end).forEach((r,i) => {
+    html += `<tr>
+      <td style="font-weight:700;color:#888">${start+i+1}</td>
+      <td style="font-weight:600">${r.District||''}</td>
+      <td>${fmtG(r.Girls_Growth_pct)}</td>
+      <td>${fmtG(r.Boys_Growth_pct)}</td>
+      <td>${fmt(r.Girls_Declining_Schools)}</td>
+    </tr>`;
+  });
+  document.getElementById('girls-body').innerHTML = html;
+  document.getElementById('girls-info').textContent = `${start+1}–${end} of ${filtered.length}`;
+  document.getElementById('girls-prev').disabled = page===0;
+  document.getElementById('girls-next').disabled = end>=filtered.length;
+}
+
+function filterGirls() {
+  const q = document.getElementById('girls-search').value.toLowerCase();
+  PS.girls.filtered = PS.girls.data.filter(r => (!q||(r.District||'').toLowerCase().includes(q)));
+  PS.girls.page = 0; renderGirls();
+}
+function girlsPage(d) { PS.girls.page += d; renderGirls(); }
+
+function renderLadder() {
+  const { filtered, page, size } = PS.ladder;
+  const start = page * size, end = Math.min(start+size, filtered.length);
+  let html = '';
+  filtered.slice(start, end).forEach(r => {
+    const gp = parseFloat(r.Girls_Progression_pct);
+    html += `<tr>
+      <td style="font-size:.75rem">${r.district||r.District||''}</td>
+      <td style="font-size:.75rem">${r.block||r.Block||''}</td>
+      <td style="max-width:200px;white-space:normal;font-size:.72rem">${r.school_name||r.School_Name||''}</td>
+      <td>${fmt(r.Girls_C8)}</td>
+      <td>${fmt(r.Girls_C12)}</td>
+      <td class="${gp>=100?'grow-pos':'grow-neg'}">${isNaN(gp)?'—':gp.toFixed(1)+'%'}</td>
+      <td style="font-size:.72rem">${r.Weakest_Step||''}</td>
+      <td style="font-size:.72rem">${r.Ladder_Tag||''}</td>
+    </tr>`;
+  });
+  document.getElementById('ladder-body').innerHTML = html;
+  document.getElementById('ladder-info').textContent = `${start+1}–${end} of ${filtered.length}`;
+  document.getElementById('ladder-prev').disabled = page===0;
+  document.getElementById('ladder-next').disabled = end>=filtered.length;
+}
+
+function filterLadder() {
+  const q   = document.getElementById('ladder-search').value.toLowerCase();
+  const tag = document.getElementById('ladder-tag').value;
+  PS.ladder.filtered = PS.ladder.data.filter(r =>
+    (!q  || (r.school_name||r.School_Name||'').toLowerCase().includes(q) ||
+             (r.district||r.District||'').toLowerCase().includes(q)) &&
+    (!tag || r.Ladder_Tag===tag)
+  );
+  PS.ladder.page = 0; renderLadder();
+}
+function ladderPage(d) { PS.ladder.page += d; renderLadder(); }
+
+function populateLadderTags() {
+  const tags = [...new Set(PS.ladder.data.map(r=>r.Ladder_Tag).filter(Boolean))].sort();
+  const el = document.getElementById('ladder-tag');
+  tags.forEach(t => { const o=document.createElement('option'); o.value=t; o.textContent=t; el.appendChild(o); });
+}
+
+// ══ Clusters ══
+function renderClusters() {
+  filterClusters();
+}
+
+function filterClusters() {
+  const rl = document.getElementById('cl-risk').value;
+  const tp = document.getElementById('cl-type').value;
+  const data = (D.condition_clusters || []).filter(r =>
+    (!rl || r.Risk_Level===rl) && (!tp || r.School_Type===tp)
+  );
+  let html = '';
+  data.forEach(r => {
+    html += `<tr>
+      <td>${riskBadge(r.Risk_Level)}</td>
+      <td style="font-size:.78rem">${r.Trend_Tag||''}</td>
+      <td style="font-size:.78rem">${r.Enroll_Pattern_Tag||''}</td>
+      <td style="font-size:.78rem">${r.School_Type||''}</td>
+      <td style="font-weight:700">${fmt(r.School_Count)}</td>
+      <td>${fmt(r.Avg_Enrollment_2526)}</td>
+      <td>${fmtG(r.Avg_Growth_pct)}</td>
+      <td>${parseFloat(r.Avg_Risk_Score||0).toFixed(1)}</td>
+      <td style="font-size:.72rem;max-width:180px;white-space:normal">${r.Districts||''}</td>
+    </tr>`;
+  });
+  document.getElementById('cluster-body').innerHTML = html;
+}
+</script>
+</body>
+</html>
