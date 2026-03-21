@@ -725,8 +725,40 @@ function renderTab(name){
 }
 
 // ═══════════════════════════════════════════════════════════
-// TAB 1: STATE OVERVIEW
+// TAB 1: STATE OVERVIEW — HELPERS
 // ═══════════════════════════════════════════════════════════
+function goToTab(tabName, filterKey, filterValue){
+  switchTab(tabName);
+  if(filterKey&&filterValue){
+    const map={district:'f-district',block:'f-block',schoolType:'f-type',zone:'f-zone',year:'f-year'};
+    const elId=map[filterKey];
+    if(elId){
+      const el=document.getElementById(elId);
+      if(el){
+        el.value=filterValue;
+        if(filterKey==='district') onDistrictChange();
+        else applyFilters();
+      }
+    }
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function dlChartPng(chartId,filename){
+  const ch=window.charts[chartId];
+  if(!ch){alert('Chart not ready');return;}
+  const a=document.createElement('a');
+  a.download=(filename||chartId)+'.png';
+  a.href=ch.toBase64Image();
+  a.click();
+}
+function dlExcel(data,filename){
+  if(!window.XLSX){alert('SheetJS not loaded');return;}
+  if(!data||!data.length){alert('No data');return;}
+  dlXLData(data,filename);
+}
+function dlBoysDecl(){dlExcel(window._boysDecl,'boys_declining_districts');}
+function dlGirlsDecl(){dlExcel(window._girlsDecl,'girls_declining_districts');}
+
 function renderOverview(){
   const D=window.dashboardData;
   const kpi=D.state_kpis||{};
@@ -755,14 +787,16 @@ function renderOverview(){
     kpiEl.innerHTML=cards.map(c=>`<div class="kpi ${c.cls}"><div class="kpi-lbl">${c.label}</div><div class="kpi-val">${c.val}</div><div class="kpi-sub">${c.sub}</div></div>`).join('');
   } else {
     const cards=[
-      {label:'Total Schools',val:fmtN(kpi.Total_Schools),sub:`Filtered: ${fmtN(schools.length)}`,cls:'primary'},
-      {label:'Enrollment 2025-26',val:fmtN(kpi.Total_Enrollment_2526),sub:`Base: ${fmtN(kpi.Total_Enrollment_2223)}`,cls:'secondary'},
-      {label:'Overall Growth',val:fmtG(kpi.Overall_Enrollment_Growth_pct),sub:'4-year change',cls:parseFloat(kpi.Overall_Enrollment_Growth_pct||0)>=0?'success':'danger'},
-      {label:'High Risk Schools',val:fmtN(kpi.High_Risk_Schools),sub:`${fmtN(kpi.Medium_Risk_Schools)} Medium`,cls:'danger'},
-      {label:'RED Zone Blocks',val:fmtN(kpi.Red_Zone_Blocks),sub:`of ${fmtN(kpi.Total_Blocks)} blocks`,cls:'danger'},
-      {label:'Critical Alerts',val:fmtN(kpi.Critical_Alert_Types),sub:'alert types active',cls:'warning'},
+      {label:'Total Schools',val:fmtN(kpi.Total_Schools),sub:`Filtered: ${fmtN(schools.length)}`,cls:'primary',fn:"goToTab('schools')"},
+      {label:'Enrollment 2025-26',val:fmtN(kpi.Total_Enrollment_2526),sub:`Base: ${fmtN(kpi.Total_Enrollment_2223)}`,cls:'secondary',fn:''},
+      {label:'Overall Growth',val:fmtG(kpi.Overall_Enrollment_Growth_pct),sub:'4-year change',cls:parseFloat(kpi.Overall_Enrollment_Growth_pct||0)>=0?'success':'danger',fn:''},
+      {label:'High Risk Schools',val:fmtN(kpi.High_Risk_Schools),sub:`${fmtN(kpi.Medium_Risk_Schools)} Medium Risk`,cls:'danger',fn:"goToTab('risk')"},
+      {label:'RED Zone Blocks',val:fmtN(kpi.Red_Zone_Blocks),sub:`of ${fmtN(kpi.Total_Blocks)} blocks`,cls:'danger',fn:"goToTab('blocks','zone','RED')"},
+      {label:'Model Schools',val:fmtN(kpi.Model_Schools),sub:'top performing',cls:'success',fn:"goToTab('schools')"},
     ];
-    kpiEl.innerHTML=cards.map(c=>`<div class="kpi ${c.cls}"><div class="kpi-lbl">${c.label}</div><div class="kpi-val">${c.val}</div><div class="kpi-sub">${c.sub}</div></div>`).join('');
+    kpiEl.innerHTML=cards.map(c=>`<div class="kpi ${c.cls}" ${c.fn?`style="cursor:pointer" onclick="${c.fn}"`:''}>
+      <div class="kpi-lbl">${c.label}</div><div class="kpi-val">${c.val}</div><div class="kpi-sub">${c.sub}</div>
+    </div>`).join('');
   }
 
   // Year cards (ALL YEARS only)
@@ -789,88 +823,246 @@ function renderOverview(){
 }
 
 function renderOverviewAll(el, schools, kpi, D){
-  const dists=[...D.district_data||[]].sort((a,b)=>parseFloat(b.Enroll_2526||b.Total_Enrollment_2526||0)-parseFloat(a.Enroll_2526||a.Total_Enrollment_2526||0));
-  const top10dist=dists.slice(0,10);
-  const bot10dist=dists.slice(-10).reverse();
-  const blocks=[...D.block_health||[]].sort((a,b)=>parseFloat(b.Avg_Enroll_2526||0)-parseFloat(a.Avg_Enroll_2526||0));
-  const top5blk=blocks.slice(0,5);
-  const bot5blk=[...D.block_health||[]].sort((a,b)=>parseFloat(a.Avg_Enroll_2526||0)-parseFloat(b.Avg_Enroll_2526||0)).slice(0,5);
+  const dists=[...D.district_data||[]];
+  const bh=D.block_health||[];
   const z=D.zone_summary||{};
+  const trend=D.enrollment_trend||[];
+  const stData=D.school_type_data||[];
+
+  // Build block enrollment from heatmap
+  const blockEnrollMap={};
+  (D.heatmap_enrollment||[]).forEach(h=>{
+    const key=(h.District||h.district||'')+'|'+(h.Block||h.block||'');
+    const yr=h.Year||h.year;
+    if(yr==='2025-26'){
+      blockEnrollMap[key]=(parseInt(h.Total_Enrollment||h.Avg_Enrollment||0)||0);
+    }
+    // Fallback: column format
+    const v=parseInt(h[YRMAP['2025-26']]||0)||0;
+    if(v>0&&!blockEnrollMap[key]) blockEnrollMap[key]=v;
+  });
+
+  const blocksWithEnroll=bh.map(b=>{
+    const key=(b.District||'')+'|'+(b.Block||'');
+    return {...b,realEnroll:blockEnrollMap[key]||0};
+  });
+  const top5blk=[...blocksWithEnroll]
+    .filter(b=>parseFloat(b.Avg_Growth_pct||0)>0&&b.realEnroll>0)
+    .sort((a,b)=>b.realEnroll-a.realEnroll).slice(0,5);
+  const bot5blk=[...blocksWithEnroll]
+    .filter(b=>b.Block_Zone==='RED'||b.Block_Zone==='ORANGE')
+    .sort((a,b)=>parseFloat(a.Avg_Growth_pct||0)-parseFloat(b.Avg_Growth_pct||0)).slice(0,5);
+
+  const byEnroll=[...dists].sort((a,b)=>parseFloat(b.Enroll_2526||b.Total_Enrollment_2526||0)-parseFloat(a.Enroll_2526||a.Total_Enrollment_2526||0));
+  const top10dist=byEnroll.slice(0,10);
+  const bot10dist=[...dists].sort((a,b)=>parseFloat(a.Overall_Growth_pct||0)-parseFloat(b.Overall_Growth_pct||0)).slice(0,10);
+
+  const boysDecl=[...dists].filter(d=>parseFloat(d.Boys_Growth_pct||0)<0)
+    .sort((a,b)=>parseFloat(a.Boys_Growth_pct||0)-parseFloat(b.Boys_Growth_pct||0));
+  const girlsDecl=[...dists].filter(d=>parseFloat(d.Girls_Growth_pct||0)<0)
+    .sort((a,b)=>parseFloat(a.Girls_Growth_pct||0)-parseFloat(b.Girls_Growth_pct||0));
+
+  const distGrowing=dists.filter(d=>parseFloat(d.Overall_Growth_pct||0)>0).length;
+  const distDeclining=dists.filter(d=>parseFloat(d.Overall_Growth_pct||0)<0).length;
+  const schGrowing=schools.filter(s=>parseFloat(s.Overall_Growth_pct||0)>0).length;
+  const schDeclining=schools.filter(s=>parseFloat(s.Overall_Growth_pct||0)<0).length;
+
+  window._top5blk=top5blk; window._bot5blk=bot5blk;
+  window._boysDecl=boysDecl; window._girlsDecl=girlsDecl;
 
   el.innerHTML=`
+    <!-- S2: Trend + Health Summary -->
     <div class="g2">
-      <div class="card"><div class="card-title">Enrollment Trend 2022–26</div><div class="ch-wrap" style="height:220px"><canvas id="c-trend"></canvas></div></div>
-      <div class="card"><div class="card-title">Schools by Enrollment Trend</div><div class="ch-wrap" style="height:220px"><canvas id="c-trenddist"></canvas></div></div>
+      <div class="card">
+        <div class="card-title">Enrollment Trend 2022–26
+          <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-trend','enrollment_trend')">&#128444; PNG</button>
+        </div>
+        <div class="ch-wrap" style="height:220px"><canvas id="c-trend"></canvas></div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="background:var(--primary);color:#fff;padding:11px 16px;font-size:.75rem;font-weight:700;letter-spacing:.06em">STATE HEALTH SUMMARY</div>
+        <div id="health-summary" style="padding:6px 0"></div>
+      </div>
     </div>
+
+    <!-- S3: Boys/Girls Declining -->
     <div class="g2">
-      <div class="card"><div class="card-title">Top 10 Districts by Enrollment</div><div class="ch-wrap" style="height:250px"><canvas id="c-top10dist"></canvas></div></div>
-      <div class="card"><div class="card-title">Bottom 10 Districts by Enrollment</div><div class="ch-wrap" style="height:250px"><canvas id="c-bot10dist"></canvas></div></div>
+      <div class="card">
+        <div class="card-title">&#128104; Boys Enrollment Declining
+          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlBoysDecl()">&#11123; Excel</button>
+        </div>
+        <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:8px">Districts where boys enrollment fell</div>
+        <div id="boys-decl-list"></div>
+        <div id="boys-decl-footer" style="font-size:.72rem;color:var(--text-muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128105; Girls Enrollment Declining
+          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlGirlsDecl()">&#11123; Excel</button>
+        </div>
+        <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:8px">Districts where girls enrollment fell</div>
+        <div id="girls-decl-list"></div>
+        <div id="girls-decl-footer" style="font-size:.72rem;color:var(--text-muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"></div>
+      </div>
     </div>
+
+    <!-- S4: School Type Cards -->
+    <div class="card">
+      <div class="card-title">Enrollment by School Type</div>
+      <div id="stype-ov-cards" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px"></div>
+    </div>
+
+    <!-- S5: Top/Bottom Districts -->
     <div class="g2">
-      <div class="card"><div class="card-title">Top 5 Blocks (Highest Enrollment)</div><div class="tbl-wrap">${miniBlockTable(top5blk)}</div></div>
-      <div class="card"><div class="card-title">Bottom 5 Blocks (Lowest Enrollment)</div><div class="tbl-wrap">${miniBlockTable(bot5blk)}</div></div>
+      <div class="card">
+        <div class="card-title">Top 10 Districts by Enrollment
+          <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-top10dist','top_districts')">&#128444; PNG</button>
+        </div>
+        <div class="ch-wrap" style="height:260px"><canvas id="c-top10dist"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Bottom 10 Districts by Growth
+          <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-bot10dist','bottom_districts')">&#128444; PNG</button>
+        </div>
+        <div class="ch-wrap" style="height:260px"><canvas id="c-bot10dist"></canvas></div>
+      </div>
     </div>
-    <div class="card"><div class="card-title">Block Zone Distribution</div>
+
+    <!-- S6: Top/Bottom Blocks -->
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">Top 5 Blocks — Highest Enrollment
+          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._top5blk,'top_blocks')">&#11123; Excel</button>
+        </div>
+        <div class="tbl-wrap" id="top5blk-tbl"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Bottom 5 Blocks — RED/ORANGE Zone
+          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._bot5blk,'declined_blocks')">&#11123; Excel</button>
+        </div>
+        <div class="tbl-wrap" id="bot5blk-tbl"></div>
+      </div>
+    </div>
+
+    <!-- S7: Zone Distribution -->
+    <div class="card">
+      <div class="card-title">Block Zone Distribution</div>
       <div class="zone-row">
-        ${['RED','ORANGE','YELLOW','GREEN'].map(k=>`<div class="zone-box zone-${k}"><div class="zn">${z[k]||0}</div><div class="zl">${k} ZONE</div></div>`).join('')}
+        ${['RED','ORANGE','YELLOW','GREEN'].map(k=>`
+          <div class="zone-box zone-${k}" style="cursor:pointer" onclick="goToTab('blocks','zone','${k}')">
+            <div class="zn">${z[k]||0}</div><div class="zl">${k} ZONE</div>
+          </div>`).join('')}
       </div>
     </div>`;
 
-  // Trend line
-  const trend=D.enrollment_trend||[];
+  // ── Trend chart ──
   mkChart('c-trend',{type:'line',data:{
     labels:trend.map(r=>r.year),
     datasets:[{label:'Enrollment',data:trend.map(r=>r.total),
       borderColor:'#2196F3',backgroundColor:'rgba(33,150,243,.12)',
-      borderWidth:2.5,pointRadius:6,pointBackgroundColor:'#2196F3',fill:true,tension:.3,
-      datalabels:{display:false}}]
+      borderWidth:2.5,pointRadius:6,pointBackgroundColor:'#2196F3',fill:true,tension:.3}]
   },options:{responsive:true,maintainAspectRatio:false,
     plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.raw)}}},
     scales:{y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},x:{grid:{display:false}}}
   }});
 
-  // Trend distribution vertical bar
-  const trendCounts={};
-  schools.forEach(s=>{const t=s.Trend_Tag||'Unknown';trendCounts[t]=(trendCounts[t]||0)+1;});
-  const tdKeys=Object.keys(trendCounts).sort((a,b)=>trendCounts[b]-trendCounts[a]);
-  mkChart('c-trenddist',{type:'bar',data:{
-    labels:tdKeys,
-    datasets:[{label:'Schools',data:tdKeys.map(k=>trendCounts[k]),
-      backgroundColor:tdKeys.map(k=>TREND_COLORS[k]||'#9E9E9E'),borderRadius:4}]
-  },options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.raw)+' schools'}}},
-    scales:{y:{grid:{color:'#f0f4f8'}},x:{grid:{display:false}}}
-  }});
+  // ── Health Summary ──
+  const hRows=[
+    {label:'Growing Districts',val:distGrowing,color:'#1B7A3E',icon:'&#128994;',fn:"goToTab('districts')"},
+    {label:'Declining Districts',val:distDeclining,color:'#C0392B',icon:'&#128308;',fn:"goToTab('districts')"},
+    {label:'Growing Schools',val:fmtN(schGrowing),color:'#1B7A3E',icon:'&#128994;',fn:"goToTab('schools')"},
+    {label:'Declining Schools',val:fmtN(schDeclining),color:'#C0392B',icon:'&#128308;',fn:"goToTab('risk')"},
+    {label:'Model Schools',val:fmtN(kpi.Model_Schools),color:'#1a3a5c',icon:'&#11088;',fn:"goToTab('schools')"},
+    {label:'Closure Risk',val:fmtN(kpi.Closure_Risk_Schools),color:'#C0392B',icon:'&#128680;',fn:"goToTab('risk')"},
+    {label:'Avg Girls Ratio',val:kpi.Avg_Girls_Ratio?parseFloat(kpi.Avg_Girls_Ratio).toFixed(2)+'%':'—',color:'#7b1fa2',icon:'&#128105;',fn:"goToTab('schools')"},
+    {label:'Critical Alerts',val:fmtN(kpi.Critical_Alert_Types),color:'#E67E22',icon:'&#9888;',fn:"goToTab('risk')"},
+  ];
+  const dividers=[1,3,5]; // after index 1,3,5 add a divider
+  document.getElementById('health-summary').innerHTML=hRows.map((r,i)=>`
+    ${i>0&&dividers.includes(i)?'<div style="border-top:1px solid #eee;margin:2px 0"></div>':'' }
+    <div onclick="${r.fn}" style="display:flex;justify-content:space-between;align-items:center;padding:7px 16px;cursor:pointer;transition:.15s" onmouseover="this.style.background='#f5f7fa'" onmouseout="this.style.background=''">
+      <span style="font-size:.78rem;color:#444">${r.icon} ${r.label}</span>
+      <strong style="font-size:.88rem;color:${r.color}">${r.val}</strong>
+    </div>`).join('');
 
-  // Top 10 districts horizontal bar
+  // ── Boys/Girls Declining Lists ──
+  const mkDeclList=(arr,pctField,listId,footerId)=>{
+    const top8=arr.slice(0,8);
+    document.getElementById(listId).innerHTML=top8.map(d=>`
+      <div onclick="goToTab('districts','district','${d.District}')" style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f0f0f0;cursor:pointer;font-size:.78rem" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background=''">
+        <span style="color:var(--primary)">${d.District||'—'}</span>
+        <span style="color:#C0392B;font-weight:600">&#9660; ${Math.abs(parseFloat(d[pctField]||0)).toFixed(1)}%</span>
+      </div>`).join('');
+    document.getElementById(footerId).textContent=`Total ${arr.length} districts with declining enrollment`;
+  };
+  mkDeclList(boysDecl,'Boys_Growth_pct','boys-decl-list','boys-decl-footer');
+  mkDeclList(girlsDecl,'Girls_Growth_pct','girls-decl-list','girls-decl-footer');
+
+  // ── School Type Cards ──
+  const stypeColors={'Full School (1-12)':'#C0392B','Sr Secondary (9-12)':'#1B7A3E','Middle to Higher (6-12)':'#1B7A3E','Mid to Secondary (6-10)':'#1B7A3E','Secondary Only (9-10)':'#1B7A3E'};
+  const stypeEl=document.getElementById('stype-ov-cards');
+  const stArr=stData.length?stData:Object.values(schools.reduce((m,s)=>{
+    const t=s.School_Type||'Unknown';
+    if(!m[t]) m[t]={School_Type:t,count:0,e2223:0,e2526:0,growing:0,declining:0};
+    m[t].count++;m[t].e2223+=parseFloat(s.Enroll_2223||0);m[t].e2526+=parseFloat(s.Enroll_2526||0);
+    if(parseFloat(s.Overall_Growth_pct||0)>0) m[t].growing++;
+    else if(parseFloat(s.Overall_Growth_pct||0)<0) m[t].declining++;
+    return m;
+  },{}));
+  stypeEl.innerHTML=stArr.map(t=>{
+    const cnt=parseInt(t.Total_Schools||t.count||0);
+    const g=parseFloat(t.Overall_Growth_pct||t.Growth_pct||(t.e2223>0?((t.e2526-t.e2223)/t.e2223*100):0));
+    const grw=parseInt(t.Growing_Schools||t.growing||0);
+    const dcl=parseInt(t.Declining_Schools||t.declining||0);
+    const growPct=cnt?(grw/cnt*100):0;
+    const dclPct=cnt?(dcl/cnt*100):0;
+    const borderCol=g>=0?'#1B7A3E':'#C0392B';
+    const enroll=parseInt(t.Total_Enrollment_2526||t.e2526||0);
+    return `<div onclick="goToTab('schooltype')" style="min-width:175px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:12px 14px;border-top:4px solid ${borderCol};cursor:pointer;background:#fff;flex-shrink:0" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,.15)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.08)'">
+      <div style="font-size:.72rem;font-weight:700;color:var(--primary);margin-bottom:6px">${t.School_Type||t.type||'—'}</div>
+      <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:8px">Schools: <strong>${fmtN(cnt)}</strong></div>
+      ${enroll?`<div style="font-size:.7rem;color:var(--text-muted)">Enroll: <strong>${fmtN(enroll)}</strong></div>`:''}
+      <div style="margin:8px 0;font-size:.88rem;font-weight:700;color:${borderCol}">${g>=0?'▲':'▼'}${Math.abs(g).toFixed(1)}%</div>
+      <div style="font-size:.65rem;color:#888;margin-bottom:3px">Growing: ${growPct.toFixed(0)}%</div>
+      <div style="background:#eee;border-radius:3px;height:5px;margin-bottom:3px"><div style="width:${Math.min(growPct,100)}%;background:#1B7A3E;height:5px;border-radius:3px"></div></div>
+      <div style="font-size:.65rem;color:#888;margin-bottom:3px">Declining: ${dclPct.toFixed(0)}%</div>
+      <div style="background:#eee;border-radius:3px;height:5px"><div style="width:${Math.min(dclPct,100)}%;background:#C0392B;height:5px;border-radius:3px"></div></div>
+    </div>`;
+  }).join('');
+
+  // ── District Charts ──
   const eKey=r=>parseFloat(r.Enroll_2526||r.Total_Enrollment_2526||0);
   mkChart('c-top10dist',{type:'bar',data:{
     labels:top10dist.map(d=>d.District),
     datasets:[{label:'Enrollment',data:top10dist.map(d=>eKey(d)),
-      backgroundColor:'rgba(76,175,80,.8)',borderRadius:3,barThickness:18}]
+      backgroundColor:'rgba(27,122,62,.8)',borderRadius:3,barThickness:18}]
   },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    onClick:(_,els)=>{if(els.length)goToTab('districts','district',top10dist[els[0].index].District);},
     plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.raw)}}},
-    scales:{x:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},y:{ticks:{font:{size:11}}}}
+    scales:{x:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},y:{ticks:{font:{size:10}}}}
   }});
-
   mkChart('c-bot10dist',{type:'bar',data:{
     labels:bot10dist.map(d=>d.District),
-    datasets:[{label:'Enrollment',data:bot10dist.map(d=>eKey(d)),
-      backgroundColor:'rgba(244,67,54,.8)',borderRadius:3,barThickness:18}]
+    datasets:[{label:'Growth%',data:bot10dist.map(d=>parseFloat(d.Overall_Growth_pct||0)),
+      backgroundColor:bot10dist.map(d=>parseFloat(d.Overall_Growth_pct||0)<-5?'rgba(192,57,43,.8)':'rgba(230,126,34,.8)'),borderRadius:3,barThickness:18}]
   },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.raw)}}},
-    scales:{x:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},y:{ticks:{font:{size:11}}}}
+    onClick:(_,els)=>{if(els.length)goToTab('districts','district',bot10dist[els[0].index].District);},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(1)}%`}}},
+    scales:{x:{ticks:{callback:v=>v+'%'},grid:{color:'#f0f4f8'}},y:{ticks:{font:{size:10}}}}
   }});
-}
 
-function miniBlockTable(blocks){
-  const rows=blocks.map(b=>`<tr>
-    <td>${b.Block||'—'}</td><td>${b.District||'—'}</td>
-    <td style="text-align:center">${fmtN(b.Total_Schools||0)}</td>
-    <td style="text-align:right">${fmtN(b.Avg_Enroll_2526||0)}</td>
-    <td style="text-align:right"><span class="${clrG(b.Avg_Growth_pct)}">${fmtP(b.Avg_Growth_pct)}</span></td>
-  </tr>`).join('');
-  return `<table class="dt"><thead><tr><th>Block</th><th>District</th><th>Schools</th><th>Enroll</th><th>Growth%</th></tr></thead><tbody>${rows}</tbody></table>`;
+  // ── Block Tables ──
+  const mkBlkTbl=(containerId,rows,isTop)=>{
+    const body=rows.length?rows.map(b=>`<tr style="cursor:pointer" onclick="goToTab('blocks','district','${b.District}')">
+      <td><strong>${b.Block||'—'}</strong></td>
+      <td>${b.District||'—'}</td>
+      <td style="text-align:center">${fmtN(b.Total_Schools||0)}</td>
+      <td style="text-align:right">${fmtN(b.realEnroll)||'—'}</td>
+      <td style="text-align:right"><span class="${clrG(b.Avg_Growth_pct)}">${fmtP(b.Avg_Growth_pct)}</span></td>
+    </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px;color:#888">No data available</td></tr>';
+    document.getElementById(containerId).innerHTML=`<table class="dt"><thead><tr><th>Block</th><th>District</th><th>Schools</th><th>Enrollment</th><th>Growth%</th></tr></thead><tbody>${body}</tbody></table>`;
+  };
+  mkBlkTbl('top5blk-tbl',top5blk,true);
+  mkBlkTbl('bot5blk-tbl',bot5blk,false);
 }
 
 function renderOverviewYear(el, schools, yr){
