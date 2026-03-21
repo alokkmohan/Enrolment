@@ -1,0 +1,6 @@
+School_Type,Class_Range,Total_Schools,Avg_Enroll_2223,Avg_Enroll_2324,Avg_Enroll_2425,Avg_Enroll_2526,Total_Enroll_2223,Total_Enroll_2526,Overall_Growth_pct,YoY_Latest_pct,Growing_Schools,Declining_Schools,Growing_pct,Declining_pct,Avg_Girls_Ratio,Avg_Continuity_8_9,Type_Health_Tag
+Secondary_Only,9-10,20,74.9,76.4,78.2,89.7,1498,1794,19.8,14.7,14,4,70.0,20.0,0.487,483.5,Thriving
+Senior_Secondary,9-12,1475,95.4,88.6,92.1,101.5,138890,149720,6.4,10.2,908,254,61.6,17.2,0.524,,Growing
+Middle_to_Secondary,6-10,152,317.9,292.6,307.7,316.3,42911,48080,-0.5,2.8,81,42,53.3,27.6,0.749,20428.1,Growing
+Middle_to_Higher,6-12,769,484.6,460.4,460.3,466.9,331962,359012,-3.7,1.4,370,246,48.1,32.0,0.588,297.4,Mixed
+Full_School,1-12,76,715.1,691.5,665.3,649.2,53633,49337,-9.2,-2.4,22,31,28.9,40.8,0.976,257.9,Mixed
