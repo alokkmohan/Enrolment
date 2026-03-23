@@ -767,10 +767,12 @@ function renderTab(name){
 function goToTab(tabName, filterKey, filterValue){
   switchTab(tabName);
   if(filterKey&&filterValue){
-    const map={district:'f-district',block:'f-block',schoolType:'f-type',zone:'f-zone',year:'f-year'};
-    const elId=map[filterKey];
-    if(elId){
-      const el=document.getElementById(elId);
+    if(filterKey==='zone'||filterKey==='schoolType'){
+      window.activeFilters[filterKey]=filterValue;
+      renderActiveTab();
+    } else {
+      const map={district:'f-district',block:'f-block',year:'f-year'};
+      const el=document.getElementById(map[filterKey]);
       if(el){
         el.value=filterValue;
         if(filterKey==='district') onDistrictChange();
@@ -1186,7 +1188,7 @@ function renderBlocks(){
   const zoneEl=document.getElementById('blk-zone-row');
   if(zoneEl){
     zoneEl.innerHTML=['RED','ORANGE','YELLOW','GREEN'].map(k=>`
-      <div class="zone-box zone-${k}" style="cursor:pointer" onclick="document.getElementById('f-zone').value='${k}';applyFilters()">
+      <div class="zone-box zone-${k}" style="cursor:pointer" onclick="window.activeFilters.zone='${k}';renderActiveTab()">
         <div class="zn">${z[k]||0}</div><div class="zl">${k} ZONE</div>
       </div>`).join('');
   }
@@ -2058,8 +2060,7 @@ function initDashboard(data){
   const fo=data.filter_options||{};
   const distSel=document.getElementById('f-district');
   (fo.districts||[]).sort().forEach(d=>{distSel.innerHTML+=`<option value="${d}">${d}</option>`;});
-  const typeSel=document.getElementById('f-type');
-  (fo.school_types||[]).sort().forEach(t=>{typeSel.innerHTML+=`<option value="${t}">${t}</option>`;});
+  // f-type removed from filter bar — skip population
 
   // Tab click events
   document.querySelectorAll('.tbtn').forEach(btn=>{
