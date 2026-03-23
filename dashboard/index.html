@@ -263,6 +263,20 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
     </div>
     <div class="g2">
       <div class="card">
+        <div class="card-title">&#128104; Boys Enrollment Trend — Year Wise
+          <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-dd-boys','dist_boys_trend')">&#128444; PNG</button>
+        </div>
+        <div class="ch-wrap" style="height:210px"><canvas id="c-dd-boys"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128105; Girls Enrollment Trend — Year Wise
+          <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-dd-girls','dist_girls_trend')">&#128444; PNG</button>
+        </div>
+        <div class="ch-wrap" style="height:210px"><canvas id="c-dd-girls"></canvas></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
         <div class="card-title">Top 5 Blocks — Highest Enrollment
           <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._ddTop5,'dist_top5_blocks')">&#11123; Excel</button>
         </div>
@@ -347,55 +361,99 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
 
 <!-- TAB 3: BLOCKS -->
 <div id="tab-blocks" class="tpane">
-  <div class="card" style="margin-bottom:14px">
-    <div class="card-title">Block Zone Distribution</div>
-    <div class="zone-row" id="blk-zone-row"></div>
+  <!-- Block Filter -->
+  <div class="fbar" style="position:static;margin-bottom:14px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
+    <select id="blk-f-district" onchange="onBlkDistrictChange()"><option value="">All Districts</option></select>
+    <select id="blk-f-block"><option value="">All Blocks</option></select>
+    <button class="btn btn-primary" onclick="onBlkGo()">&#9654; Go</button>
+    <button class="btn btn-outline" onclick="resetBlkFilter()">&#8635; Reset</button>
+    <span id="blk-loading" style="display:none;align-items:center;gap:6px;font-size:.78rem;color:var(--text-muted)">
+      <span style="width:14px;height:14px;border:2px solid #ccc;border-top-color:var(--primary);border-radius:50%;display:inline-block;animation:sp .7s linear infinite"></span> Loading...
+    </span>
   </div>
-  <div class="g2">
-    <div class="card">
-      <div class="card-title">Top 5 Blocks — Highest Enrollment
-        <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._top5blk,'top_blocks')">&#11123; Excel</button>
+
+  <!-- Block Detail Panel -->
+  <div id="blk-detail" style="display:none">
+    <div class="card" style="background:var(--primary);color:#fff;padding:16px 20px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <div id="blk-dd-name" style="font-size:1.15rem;font-weight:700"></div>
+          <div id="blk-dd-meta" style="font-size:.75rem;opacity:.78;margin-top:3px"></div>
+        </div>
+        <button onclick="resetBlkFilter()" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:.78rem;font-family:inherit">&#10005; Clear</button>
       </div>
-      <div class="tbl-wrap" id="top5blk-tbl"></div>
+    </div>
+    <div class="g4" id="blk-dd-year-cards" style="margin-bottom:14px"></div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">Enrollment Trend — 4 Years
+          <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-blk-trend','block_trend')">&#128444; PNG</button>
+        </div>
+        <div class="ch-wrap" style="height:220px"><canvas id="c-blk-trend"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128104; Boys vs &#128105; Girls Enrollment</div>
+        <div class="ch-wrap" style="height:220px"><canvas id="c-blk-gender"></canvas></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">&#128104; Boys Enrollment Declining Schools
+          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._blkBoysDecl,'block_boys_declining')">&#11123; Excel</button>
+        </div>
+        <div class="tbl-wrap" id="blk-boys-decl-tbl"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128105; Girls Enrollment Declining Schools
+          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._blkGirlsDecl,'block_girls_declining')">&#11123; Excel</button>
+        </div>
+        <div class="tbl-wrap" id="blk-girls-decl-tbl"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Default Block View -->
+  <div id="blk-default">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">Block Zone Distribution</div>
+      <div class="zone-row" id="blk-zone-row"></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">Top 5 Blocks — Highest Enrollment
+          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._top5blk,'top_blocks')">&#11123; Excel</button>
+        </div>
+        <div class="tbl-wrap" id="top5blk-tbl"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Bottom 5 Blocks — RED/ORANGE Zone
+          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._bot5blk,'declined_blocks')">&#11123; Excel</button>
+        </div>
+        <div class="tbl-wrap" id="bot5blk-tbl"></div>
+      </div>
     </div>
     <div class="card">
-      <div class="card-title">Bottom 5 Blocks — RED/ORANGE Zone
-        <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._bot5blk,'declined_blocks')">&#11123; Excel</button>
+      <div class="card-title">Block Health Table
+        <button class="btn btn-success" onclick="dlXL('block-data','blocks')">&#11123; Download Excel</button>
       </div>
-      <div class="tbl-wrap" id="bot5blk-tbl"></div>
+      <div class="tbl-wrap">
+        <table class="dt" id="block-tbl">
+          <thead><tr>
+            <th onclick="sortTbl('block-tbl',0,'str')">District</th>
+            <th onclick="sortTbl('block-tbl',1,'str')">Block</th>
+            <th onclick="sortTbl('block-tbl',2,'str')">Zone</th>
+            <th onclick="sortTbl('block-tbl',3,'num')">Schools</th>
+            <th onclick="sortTbl('block-tbl',4,'num')">Growing</th>
+            <th onclick="sortTbl('block-tbl',5,'num')">Declining</th>
+            <th onclick="sortTbl('block-tbl',6,'num')">Avg Growth%</th>
+            <th onclick="sortTbl('block-tbl',7,'num')">Cont 8→9</th>
+            <th onclick="sortTbl('block-tbl',8,'str')">Priority</th>
+          </tr></thead>
+          <tbody id="block-tbody"></tbody>
+        </table>
+      </div>
+      <div class="tbl-ctrl"><span id="block-info"></span><div class="pgbtns"><button class="pbtn" id="block-prev" onclick="pg('block',-1)">&#8592;</button><button class="pbtn" id="block-next" onclick="pg('block',1)">&#8594;</button></div></div>
     </div>
-  </div>
-  <div class="card">
-    <div class="card-title">Block Zone Cards <span id="bcard-info" style="font-weight:400;color:#888;font-size:.72rem"></span>
-      <div class="pgbtns"><button class="pbtn" id="bcard-prev" onclick="pg('bcard',-1)">&#8592;</button><button class="pbtn" id="bcard-next" onclick="pg('bcard',1)">&#8594;</button></div>
-    </div>
-    <div class="block-grid" id="block-cards"></div>
-  </div>
-  <div class="card">
-    <div class="card-title">Block Health Table
-      <button class="btn btn-success" onclick="dlXL('block-data','blocks')">&#11123; Download Excel</button>
-    </div>
-    <div class="tbl-wrap">
-      <table class="dt" id="block-tbl">
-        <thead><tr>
-          <th onclick="sortTbl('block-tbl',0,'str')">District</th>
-          <th onclick="sortTbl('block-tbl',1,'str')">Block</th>
-          <th onclick="sortTbl('block-tbl',2,'str')">Zone</th>
-          <th onclick="sortTbl('block-tbl',3,'num')">Schools</th>
-          <th onclick="sortTbl('block-tbl',4,'num')">Growing</th>
-          <th onclick="sortTbl('block-tbl',5,'num')">Declining</th>
-          <th onclick="sortTbl('block-tbl',6,'num')">Avg Growth%</th>
-          <th onclick="sortTbl('block-tbl',7,'num')">Cont 8→9</th>
-          <th onclick="sortTbl('block-tbl',8,'str')">Priority</th>
-        </tr></thead>
-        <tbody id="block-tbody"></tbody>
-      </table>
-    </div>
-    <div class="tbl-ctrl"><span id="block-info"></span><div class="pgbtns"><button class="pbtn" id="block-prev" onclick="pg('block',-1)">&#8592;</button><button class="pbtn" id="block-next" onclick="pg('block',1)">&#8594;</button></div></div>
-  </div>
-  <div class="card">
-    <div class="card-title">Block Enrollment Heatmap</div>
-    <div class="tbl-wrap"><table class="dt hm" id="heatmap-tbl"></table></div>
   </div>
 </div>
 
@@ -544,6 +602,7 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
     <a onclick="rptScroll('rpt-s5',this)">&#127979; Schools&#8595;</a>
     <a onclick="rptScroll('rpt-s6',this)">&#128105; Girls&#8595;</a>
     <a onclick="rptScroll('rpt-s7',this)">&#128104; Boys&#8595;</a>
+    <a onclick="rptScroll('rpt-s8',this)">&#128205; Block Health</a>
     <button class="btn btn-success" style="font-size:.72rem;padding:4px 10px;margin-left:6px" onclick="dlXLReport()">&#11123; Full Excel</button>
     <button class="btn btn-primary" style="font-size:.72rem;padding:4px 10px" onclick="window.print()">&#128424; Print</button>
   </nav>
@@ -1313,6 +1372,42 @@ function renderDistrictDetail(distName,D){
   };
   mkBT('dd-top5-tbl',top5,'No block data');
   mkBT('dd-decl-tbl',declBlks,'No declining blocks — Good!');
+
+  // ── Boys & Girls Year-wise Trend ──
+  // Estimate from school data for this district
+  const distSchools=(D.all_schools||[]).filter(s=>(s.district||s.District)===distName);
+  const gRatio=yr=>{
+    // average girls ratio per year from school data
+    const col=yr==='2025-26'?'Girls_Ratio_2526':yr==='2024-25'?'Girls_Ratio_2425':yr==='2023-24'?'Girls_Ratio_2324':'Girls_Ratio_2223';
+    const vals=distSchools.map(s=>parseFloat(s[col]||s.Girls_Ratio_2526||0)).filter(v=>v>0);
+    return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0.5;
+  };
+  const yrEnrollArr=[
+    parseFloat(distRow.Enroll_2223||distRow.Total_Enrollment_2223||0),
+    parseFloat(distRow.Enroll_2324||0),
+    parseFloat(distRow.Enroll_2425||0),
+    parseFloat(distRow.Enroll_2526||distRow.Total_Enrollment_2526||0)
+  ];
+  const girlsArr=YRCOLS.map((yr,i)=>Math.round(yrEnrollArr[i]*(gRatio(yr))));
+  const boysArr=YRCOLS.map((yr,i)=>Math.round(yrEnrollArr[i]-girlsArr[i]));
+
+  const mkGenderTrend=(canvasId,data,color,label)=>{
+    const colors=data.map((v,i)=>i===0?`${color}.5)`:v>=(data[i-1]||0)?`rgba(27,122,62,.85)`:`rgba(192,57,43,.85)`);
+    mkChart(canvasId,{type:'bar',data:{
+      labels:YRCOLS,
+      datasets:[{label,data,backgroundColor:colors,borderRadius:4,barThickness:36}]
+    },options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>{
+          const prev=c.dataIndex>0?data[c.dataIndex-1]:null;
+          const chg=prev&&prev>0?((c.raw-prev)/prev*100):null;
+          return ` ${fmtN(c.raw)}${chg!=null?' ('+fmtP(chg)+')':''}`;
+        }}}},
+      scales:{y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},x:{grid:{display:false}}}
+    }});
+  };
+  mkGenderTrend('c-dd-boys',boysArr,'rgba(33,150,243,','Boys Enrollment');
+  mkGenderTrend('c-dd-girls',girlsArr,'rgba(233,30,99,','Girls Enrollment');
 }
 
 function filterByDistrict(dist){
@@ -1325,20 +1420,25 @@ function filterByDistrict(dist){
 // ═══════════════════════════════════════════════════════════
 function renderBlocks(){
   const D=window.dashboardData;
+  const selDist=window.blkFilters&&window.blkFilters.district||'';
+  const selBlk=window.blkFilters&&window.blkFilters.block||'';
+  const showDetail=selDist&&selBlk;
+  document.getElementById('blk-detail').style.display=showDetail?'block':'none';
+  document.getElementById('blk-default').style.display=showDetail?'none':'block';
+  if(showDetail){renderBlockDetail(selDist,selBlk,D);return;}
+
   const blocks=getBlocks();
   window.xlData['block-data']=blocks;
 
-  // ── Zone Distribution ──
+  // Zone Distribution
   const z=D.zone_summary||{};
   const zoneEl=document.getElementById('blk-zone-row');
-  if(zoneEl){
-    zoneEl.innerHTML=['RED','ORANGE','YELLOW','GREEN'].map(k=>`
-      <div class="zone-box zone-${k}" style="cursor:pointer" onclick="window.activeFilters.zone='${k}';renderActiveTab()">
-        <div class="zn">${z[k]||0}</div><div class="zl">${k} ZONE</div>
-      </div>`).join('');
-  }
+  if(zoneEl) zoneEl.innerHTML=['RED','ORANGE','YELLOW','GREEN'].map(k=>`
+    <div class="zone-box zone-${k}" style="cursor:pointer" onclick="window.activeFilters.zone='${k}';renderActiveTab()">
+      <div class="zn">${z[k]||0}</div><div class="zl">${k} ZONE</div>
+    </div>`).join('');
 
-  // ── Top 5 / Bottom 5 Blocks ──
+  // Top 5 / Bottom 5
   const bh=D.block_health||[];
   const blkEnrollMap={};
   (D.heatmap_enrollment||[]).forEach(h=>{
@@ -1349,49 +1449,25 @@ function renderBlocks(){
     if(v>0&&!blkEnrollMap[key]) blkEnrollMap[key]=v;
   });
   const blksWithEnroll=bh.map(b=>({...b,realEnroll:blkEnrollMap[(b.District||'')+'|'+(b.Block||'')]||0}));
-  const top5blk=[...blksWithEnroll].filter(b=>parseFloat(b.Avg_Growth_pct||0)>0&&b.realEnroll>0)
-    .sort((a,b)=>b.realEnroll-a.realEnroll).slice(0,5);
-  const bot5blk=[...blksWithEnroll].filter(b=>b.Block_Zone==='RED'||b.Block_Zone==='ORANGE')
-    .sort((a,b)=>parseFloat(a.Avg_Growth_pct||0)-parseFloat(b.Avg_Growth_pct||0)).slice(0,5);
-  window._top5blk=top5blk; window._bot5blk=bot5blk;
-  const mkBlkTbl=(containerId,rows)=>{
-    const body=rows.length?rows.map(b=>`<tr style="cursor:pointer" onclick="goToTab('blocks','district','${b.District}')">
+  window._top5blk=[...blksWithEnroll].filter(b=>parseFloat(b.Avg_Growth_pct||0)>0&&b.realEnroll>0).sort((a,b)=>b.realEnroll-a.realEnroll).slice(0,5);
+  window._bot5blk=[...blksWithEnroll].filter(b=>b.Block_Zone==='RED'||b.Block_Zone==='ORANGE').sort((a,b)=>parseFloat(a.Avg_Growth_pct||0)-parseFloat(b.Avg_Growth_pct||0)).slice(0,5);
+  const mkBlkTbl=(id,rows)=>{
+    const body=rows.length?rows.map(b=>`<tr>
       <td><strong>${b.Block||'—'}</strong></td><td>${b.District||'—'}</td>
       <td style="text-align:center">${fmtN(b.Total_Schools||0)}</td>
       <td style="text-align:right">${fmtN(b.realEnroll)||'—'}</td>
       <td style="text-align:right"><span class="${clrG(b.Avg_Growth_pct)}">${fmtP(b.Avg_Growth_pct)}</span></td>
     </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px;color:#888">No data</td></tr>';
-    document.getElementById(containerId).innerHTML=`<table class="dt"><thead><tr><th>Block</th><th>District</th><th>Schools</th><th>Enrollment</th><th>Growth%</th></tr></thead><tbody>${body}</tbody></table>`;
+    document.getElementById(id).innerHTML=`<table class="dt"><thead><tr><th>Block</th><th>District</th><th>Schools</th><th>Enrollment</th><th>Growth%</th></tr></thead><tbody>${body}</tbody></table>`;
   };
-  mkBlkTbl('top5blk-tbl',top5blk);
-  mkBlkTbl('bot5blk-tbl',bot5blk);
+  mkBlkTbl('top5blk-tbl',window._top5blk);
+  mkBlkTbl('bot5blk-tbl',window._bot5blk);
 
-  // Block cards
-  initPg('bcard',blocks,30,()=>{
-    const {rows,total,page,size}=pgRows('bcard');
-    document.getElementById('bcard-info').textContent=`${fmtN(total)} blocks`;
-    document.getElementById('block-cards').innerHTML=rows.map(b=>`
-      <div class="block-card ${b.Block_Zone||''}">
-        <div class="bc-name">${b.Block||'—'}</div>
-        <div class="bc-dist">${b.District||'—'}</div>
-        <div class="bc-stats">
-          ${zoneBadge(b.Block_Zone)}
-          <span>${fmtN(b.Total_Schools||0)} schools</span>
-          <span class="${clrG(b.Avg_Growth_pct)}">${fmtP(b.Avg_Growth_pct)}</span>
-        </div>
-      </div>`).join('');
-    const pages=Math.ceil(total/size);
-    document.getElementById('bcard-prev').disabled=page===0;
-    document.getElementById('bcard-next').disabled=page>=pages-1;
-  });
-  window.pgRender['bcard']();
-
-  // Block table
+  // Block Health Table
   initPg('block',blocks,25,()=>{
-    const {rows,start}=pgRows('block');
+    const {rows}=pgRows('block');
     document.getElementById('block-tbody').innerHTML=rows.map(b=>`<tr>
-      <td>${b.District||'—'}</td>
-      <td>${b.Block||'—'}</td>
+      <td>${b.District||'—'}</td><td>${b.Block||'—'}</td>
       <td>${zoneBadge(b.Block_Zone)}</td>
       <td style="text-align:center">${fmtN(b.Total_Schools)}</td>
       <td style="text-align:center">${fmtN(b.Growing_Schools)}</td>
@@ -1403,9 +1479,106 @@ function renderBlocks(){
     pgCtrl('block','block-info','block-prev','block-next');
   });
   window.pgRender['block']();
+}
 
-  // Heatmap
-  renderHeatmap();
+function onBlkDistrictChange(){
+  const dist=document.getElementById('blk-f-district').value;
+  const D=window.dashboardData;
+  const blkSel=document.getElementById('blk-f-block');
+  blkSel.innerHTML='<option value="">All Blocks</option>';
+  if(dist&&D.filter_options&&D.filter_options.blocks&&D.filter_options.blocks[dist]){
+    D.filter_options.blocks[dist].forEach(b=>{ blkSel.innerHTML+=`<option value="${b}">${b}</option>`; });
+  }
+}
+
+function onBlkGo(){
+  const dist=document.getElementById('blk-f-district').value;
+  const blk=document.getElementById('blk-f-block').value;
+  window.blkFilters={district:dist,block:blk};
+  const ldEl=document.getElementById('blk-loading');
+  if(ldEl) ldEl.style.display='inline-flex';
+  setTimeout(()=>{ renderBlocks(); if(ldEl) ldEl.style.display='none'; },0);
+}
+
+function resetBlkFilter(){
+  document.getElementById('blk-f-district').value='';
+  document.getElementById('blk-f-block').innerHTML='<option value="">All Blocks</option>';
+  window.blkFilters={district:'',block:''};
+  renderBlocks();
+}
+
+function renderBlockDetail(distName,blkName,D){
+  const blkRow=(D.block_health||[]).find(b=>b.District===distName&&b.Block===blkName)||{};
+  const g=parseFloat(blkRow.Avg_Growth_pct||0);
+
+  // Header
+  document.getElementById('blk-dd-name').textContent=`${blkName} — ${distName}`;
+  document.getElementById('blk-dd-meta').innerHTML=`${zoneBadge(blkRow.Block_Zone)} &nbsp; ${fmtN(blkRow.Total_Schools||0)} Schools &nbsp;|&nbsp; ${fmtN(blkRow.Growing_Schools||0)} Growing &nbsp;|&nbsp; ${fmtN(blkRow.Declining_Schools||0)} Declining &nbsp;|&nbsp; Growth: <strong>${fmtP(g)}</strong>`;
+
+  // 4-year enrollment from heatmap
+  const hmRows=(D.heatmap_enrollment||[]).filter(h=>(h.District||h.district)===distName&&(h.Block||h.block)===blkName);
+  const getHmVal=yr=>{
+    const r=hmRows.find(h=>(h.Year||h.year)===yr);
+    if(r) return parseInt(r.Total_Enrollment||r.Avg_Enrollment||0)||parseInt(r[YRMAP[yr]]||0)||0;
+    // fallback: sum from year column in any row
+    return hmRows.reduce((s,h)=>s+(parseInt(h[YRMAP[yr]]||0)||0),0);
+  };
+  const yrVals=YRCOLS.map(y=>getHmVal(y));
+
+  // 4 Year Cards
+  document.getElementById('blk-dd-year-cards').innerHTML=YRCOLS.map((yr,i)=>{
+    const prev=i>0?yrVals[i-1]:null;
+    const chg=prev&&prev>0?((yrVals[i]-prev)/prev*100):null;
+    const chgHtml=chg!=null?`<div class="yc-chg ${chg>=0?'pos':'neg'}">${fmtG(chg)}</div>`:'<div class="yc-chg" style="color:#aaa">Base year</div>';
+    return `<div class="yr-card"><div class="yc-yr">${yr}</div><div class="yc-val">${fmtN(yrVals[i])}</div><div class="yc-sub">enrollment</div>${chgHtml}</div>`;
+  }).join('');
+
+  // Enrollment trend chart
+  mkChart('c-blk-trend',{type:'bar',data:{
+    labels:YRCOLS,
+    datasets:[{label:'Enrollment',data:yrVals,
+      backgroundColor:['rgba(33,150,243,.65)','rgba(33,150,243,.65)','rgba(33,150,243,.65)','rgba(27,122,62,.85)'],
+      borderRadius:4,barThickness:36}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.raw)}}},
+    scales:{y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},x:{grid:{display:false}}}
+  }});
+
+  // Boys vs Girls — from school data filtered by block
+  const blkSchools=(D.all_schools||[]).filter(s=>(s.block||s.Block)===blkName&&(s.district||s.District)===distName);
+  const totalEnroll26=blkSchools.reduce((s,sc)=>s+(parseFloat(sc.Enroll_2526||0)),0);
+  const avgGirlsRatio=blkSchools.length?blkSchools.reduce((s,sc)=>s+(parseFloat(sc.Girls_Ratio_2526||0.5)),0)/blkSchools.length:0.5;
+  const girlsE=Math.round(totalEnroll26*avgGirlsRatio);
+  const boysE=Math.round(totalEnroll26-girlsE);
+  const boysG=parseFloat(blkRow.Boys_Growth_pct||0);
+  const girlsG=parseFloat(blkRow.Girls_Growth_pct||0);
+  mkChart('c-blk-gender',{type:'bar',data:{
+    labels:['Boys','Girls'],
+    datasets:[
+      {label:'Enrollment 2025-26',data:[boysE,girlsE],backgroundColor:['rgba(33,150,243,.8)','rgba(233,30,99,.8)'],borderRadius:4,barThickness:50}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.raw)}}},
+    scales:{y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},x:{grid:{display:false}}}
+  }});
+
+  // Declining schools
+  const boysDecl=blkSchools.filter(s=>parseFloat(s.Boys_Growth_pct||s.Overall_Growth_pct||0)<0)
+    .sort((a,b)=>parseFloat(a.Boys_Growth_pct||a.Overall_Growth_pct||0)-parseFloat(b.Boys_Growth_pct||b.Overall_Growth_pct||0));
+  const girlsDecl=blkSchools.filter(s=>parseFloat(s.Girls_Growth_pct||0)<0)
+    .sort((a,b)=>parseFloat(a.Girls_Growth_pct||0)-parseFloat(b.Girls_Growth_pct||0));
+  window._blkBoysDecl=boysDecl; window._blkGirlsDecl=girlsDecl;
+
+  const mkST=(id,rows,gField,empty)=>{
+    const body=rows.length?rows.map(s=>`<tr>
+      <td><strong>${s.school_name||s.School_Name||'—'}</strong></td>
+      <td style="text-align:right">${fmtN(s.Enroll_2526||0)}</td>
+      <td style="text-align:right"><span class="neg">▼ ${Math.abs(parseFloat(s[gField]||0)).toFixed(1)}%</span></td>
+    </tr>`).join(''):`<tr><td colspan="3" style="text-align:center;padding:14px;color:#888">${empty}</td></tr>`;
+    document.getElementById(id).innerHTML=`<table class="dt"><thead><tr><th>School</th><th>Enroll 2025-26</th><th>Growth%</th></tr></thead><tbody>${body}</tbody></table>`;
+  };
+  mkST('blk-boys-decl-tbl',boysDecl,'Boys_Growth_pct','No boys declining schools');
+  mkST('blk-girls-decl-tbl',girlsDecl,'Girls_Growth_pct','No girls declining schools');
 }
 
 function renderHeatmap(){
