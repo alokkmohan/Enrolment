@@ -278,6 +278,20 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
     <div class="tbl-ctrl"><span id="dist-info"></span><div class="pgbtns"><button class="pbtn" id="dist-prev" onclick="pg('dist',-1)">&#8592;</button><button class="pbtn" id="dist-next" onclick="pg('dist',1)">&#8594;</button></div></div>
   </div>
   <div class="g2">
+    <div class="card">
+      <div class="card-title">Top 10 Districts by Enrollment
+        <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-top10dist','top_districts')">&#128444; PNG</button>
+      </div>
+      <div class="ch-wrap" style="height:260px"><canvas id="c-top10dist"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Bottom 10 Districts by Growth
+        <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-bot10dist','bottom_districts')">&#128444; PNG</button>
+      </div>
+      <div class="ch-wrap" style="height:260px"><canvas id="c-bot10dist"></canvas></div>
+    </div>
+  </div>
+  <div class="g2">
     <div class="card"><div class="card-title">Girls vs Boys Growth (Top 20 Districts)</div><div class="ch-wrap" style="height:260px"><canvas id="c-gender"></canvas></div></div>
     <div class="card"><div class="card-title">Enrollment Trend — Top 10 Districts</div><div class="ch-wrap" style="height:260px"><canvas id="c-disttrend"></canvas></div></div>
   </div>
@@ -303,6 +317,10 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
 
 <!-- TAB 3: BLOCKS -->
 <div id="tab-blocks" class="tpane">
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">Block Zone Distribution</div>
+    <div class="zone-row" id="blk-zone-row"></div>
+  </div>
   <div class="g2">
     <div class="card">
       <div class="card-title">Top 5 Blocks — Highest Enrollment
@@ -824,11 +842,14 @@ function renderOverview(){
       {label:'Overall Growth',val:fmtG(kpi.Overall_Enrollment_Growth_pct),sub:'4-year change',cls:parseFloat(kpi.Overall_Enrollment_Growth_pct||0)>=0?'success':'danger',fn:''},
       {label:'High Risk Schools',val:fmtN(kpi.High_Risk_Schools),sub:`${fmtN(kpi.Medium_Risk_Schools)} Medium Risk`,cls:'danger',fn:"goToTab('risk')"},
       {label:'RED Zone Blocks',val:fmtN(kpi.Red_Zone_Blocks),sub:`of ${fmtN(kpi.Total_Blocks)} blocks`,cls:'danger',fn:"goToTab('blocks','zone','RED')"},
-      {label:'Model Schools',val:fmtN(kpi.Model_Schools),sub:'top performing',cls:'success',fn:"goToTab('schools')"},
     ];
     kpiEl.innerHTML=cards.map(c=>`<div class="kpi ${c.cls}" ${c.fn?`style="cursor:pointer" onclick="${c.fn}"`:''}>
       <div class="kpi-lbl">${c.label}</div><div class="kpi-val">${c.val}</div><div class="kpi-sub">${c.sub}</div>
-    </div>`).join('');
+    </div>`).join('')
+    + `<div onclick="goToTab('schools')" style="background:linear-gradient(135deg,#1b5e20,#4caf50);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px 14px;max-height:85px;overflow:hidden;cursor:pointer;display:flex;align-items:center;gap:14px">
+        <div style="font-size:2rem;font-weight:700;color:#fff;line-height:1">${fmtN(kpi.Model_Schools)||'—'}</div>
+        <div><div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,.8);margin-bottom:2px">Model Schools</div><div style="font-size:.62rem;color:rgba(255,255,255,.7)">top performing</div></div>
+      </div>`;
   }
 
   // Year cards (ALL YEARS only)
@@ -860,10 +881,6 @@ function renderOverviewAll(el, schools, kpi, D){
   const z=D.zone_summary||{};
   const trend=D.enrollment_trend||[];
   const stData=D.school_type_data||[];
-
-  const byEnroll=[...dists].sort((a,b)=>parseFloat(b.Enroll_2526||b.Total_Enrollment_2526||0)-parseFloat(a.Enroll_2526||a.Total_Enrollment_2526||0));
-  const top10dist=byEnroll.slice(0,10);
-  const bot10dist=[...dists].sort((a,b)=>parseFloat(a.Overall_Growth_pct||0)-parseFloat(b.Overall_Growth_pct||0)).slice(0,10);
 
   const boysDecl=[...dists].filter(d=>parseFloat(d.Boys_Growth_pct||0)<0)
     .sort((a,b)=>parseFloat(a.Boys_Growth_pct||0)-parseFloat(b.Boys_Growth_pct||0));
@@ -903,37 +920,12 @@ function renderOverviewAll(el, schools, kpi, D){
     </div>
 
     <!-- S4: School Type Cards -->
-    <div class="card">
+    <div class="card" style="background:#fff;padding:18px 20px">
       <div class="card-title">Enrollment by School Type</div>
-      <div id="stype-ov-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px"></div>
+      <div id="stype-ov-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding-top:4px"></div>
     </div>
 
-    <!-- S5: Top/Bottom Districts -->
-    <div class="g2">
-      <div class="card">
-        <div class="card-title">Top 10 Districts by Enrollment
-          <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-top10dist','top_districts')">&#128444; PNG</button>
-        </div>
-        <div class="ch-wrap" style="height:260px"><canvas id="c-top10dist"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-title">Bottom 10 Districts by Growth
-          <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-bot10dist','bottom_districts')">&#128444; PNG</button>
-        </div>
-        <div class="ch-wrap" style="height:260px"><canvas id="c-bot10dist"></canvas></div>
-      </div>
-    </div>
-
-    <!-- S7: Zone Distribution -->
-    <div class="card">
-      <div class="card-title">Block Zone Distribution</div>
-      <div class="zone-row">
-        ${['RED','ORANGE','YELLOW','GREEN'].map(k=>`
-          <div class="zone-box zone-${k}" style="cursor:pointer" onclick="goToTab('blocks','zone','${k}')">
-            <div class="zn">${z[k]||0}</div><div class="zl">${k} ZONE</div>
-          </div>`).join('')}
-      </div>
-    </div>`;
+    `;
 
   // ── Trend chart ──
   mkChart('c-trend',{type:'line',data:{
@@ -1024,7 +1016,7 @@ function renderOverviewAll(el, schools, kpi, D){
     const dclPct=cnt?(dcl/cnt*100):0;
     const borderCol=g>=0?'#1B7A3E':'#C0392B';
     const enroll=parseInt(t.Total_Enrollment_2526||t.e2526||0);
-    return `<div onclick="goToTab('schooltype')" style="border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:18px 20px;border-top:4px solid ${borderCol};cursor:pointer;background:#fff" onmouseover="this.style.boxShadow='0 4px 14px rgba(0,0,0,.14)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.08)'">
+    return `<div onclick="goToTab('schooltype')" style="border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:22px 24px;border-top:4px solid ${borderCol};cursor:pointer;background:#fff" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.14)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.08)'">
       <div style="font-size:.8rem;font-weight:700;color:var(--primary);margin-bottom:8px">${t.School_Type||t.type||'—'}</div>
       <div style="display:flex;gap:16px;margin-bottom:10px">
         <div><div style="font-size:.65rem;color:var(--text-muted)">Schools</div><div style="font-size:1.2rem;font-weight:700;color:var(--primary)">${fmtN(cnt)}</div></div>
@@ -1037,27 +1029,6 @@ function renderOverviewAll(el, schools, kpi, D){
       <div style="background:#eee;border-radius:4px;height:7px"><div style="width:${Math.min(dclPct,100)}%;background:#C0392B;height:7px;border-radius:4px"></div></div>
     </div>`;
   }).join('');
-
-  // ── District Charts ──
-  const eKey=r=>parseFloat(r.Enroll_2526||r.Total_Enrollment_2526||0);
-  mkChart('c-top10dist',{type:'bar',data:{
-    labels:top10dist.map(d=>d.District),
-    datasets:[{label:'Enrollment',data:top10dist.map(d=>eKey(d)),
-      backgroundColor:'rgba(27,122,62,.8)',borderRadius:3,barThickness:18}]
-  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-    onClick:(_,els)=>{if(els.length)goToTab('districts','district',top10dist[els[0].index].District);},
-    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.raw)}}},
-    scales:{x:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},y:{ticks:{font:{size:10}}}}
-  }});
-  mkChart('c-bot10dist',{type:'bar',data:{
-    labels:bot10dist.map(d=>d.District),
-    datasets:[{label:'Growth%',data:bot10dist.map(d=>parseFloat(d.Overall_Growth_pct||0)),
-      backgroundColor:bot10dist.map(d=>parseFloat(d.Overall_Growth_pct||0)<-5?'rgba(192,57,43,.8)':'rgba(230,126,34,.8)'),borderRadius:3,barThickness:18}]
-  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-    onClick:(_,els)=>{if(els.length)goToTab('districts','district',bot10dist[els[0].index].District);},
-    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(1)}%`}}},
-    scales:{x:{ticks:{callback:v=>v+'%'},grid:{color:'#f0f4f8'}},y:{ticks:{font:{size:10}}}}
-  }});
 
   // ── Block Tables ──
 }
@@ -1203,6 +1174,29 @@ function renderDistricts(){
   };
   renderDeclList(bDecl,'Boys_Growth_pct','dist-boys-decl-list','dist-boys-decl-footer');
   renderDeclList(gDecl,'Girls_Growth_pct','dist-girls-decl-list','dist-girls-decl-footer');
+
+  // ── Top 10 / Bottom 10 District Charts ──
+  const byEnroll=[...allDists].sort((a,b)=>parseFloat(b.Enroll_2526||b.Total_Enrollment_2526||0)-parseFloat(a.Enroll_2526||a.Total_Enrollment_2526||0));
+  const top10dist=byEnroll.slice(0,10);
+  const bot10dist=[...allDists].sort((a,b)=>parseFloat(a.Overall_Growth_pct||0)-parseFloat(b.Overall_Growth_pct||0)).slice(0,10);
+  mkChart('c-top10dist',{type:'bar',data:{
+    labels:top10dist.map(d=>d.District),
+    datasets:[{label:'Enrollment',data:top10dist.map(d=>parseFloat(d.Enroll_2526||d.Total_Enrollment_2526||0)),
+      backgroundColor:'rgba(27,122,62,.8)',borderRadius:3,barThickness:18}]
+  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    onClick:(_,els)=>{if(els.length)filterByDistrict(top10dist[els[0].index].District);},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.raw)}}},
+    scales:{x:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},y:{ticks:{font:{size:10}}}}
+  }});
+  mkChart('c-bot10dist',{type:'bar',data:{
+    labels:bot10dist.map(d=>d.District),
+    datasets:[{label:'Growth%',data:bot10dist.map(d=>parseFloat(d.Overall_Growth_pct||0)),
+      backgroundColor:bot10dist.map(d=>parseFloat(d.Overall_Growth_pct||0)<-5?'rgba(192,57,43,.8)':'rgba(230,126,34,.8)'),borderRadius:3,barThickness:18}]
+  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    onClick:(_,els)=>{if(els.length)filterByDistrict(bot10dist[els[0].index].District);},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(1)}%`}}},
+    scales:{x:{ticks:{callback:v=>v+'%'},grid:{color:'#f0f4f8'}},y:{ticks:{font:{size:10}}}}
+  }});
 }
 
 function filterByDistrict(dist){
@@ -1217,6 +1211,16 @@ function renderBlocks(){
   const D=window.dashboardData;
   const blocks=getBlocks();
   window.xlData['block-data']=blocks;
+
+  // ── Zone Distribution ──
+  const z=D.zone_summary||{};
+  const zoneEl=document.getElementById('blk-zone-row');
+  if(zoneEl){
+    zoneEl.innerHTML=['RED','ORANGE','YELLOW','GREEN'].map(k=>`
+      <div class="zone-box zone-${k}" style="cursor:pointer" onclick="document.getElementById('f-zone').value='${k}';applyFilters()">
+        <div class="zn">${z[k]||0}</div><div class="zl">${k} ZONE</div>
+      </div>`).join('');
+  }
 
   // ── Top 5 / Bottom 5 Blocks ──
   const bh=D.block_health||[];
