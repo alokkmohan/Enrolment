@@ -882,6 +882,10 @@ function renderOverviewAll(el, schools, kpi, D){
       <div class="card" style="padding:0;overflow:hidden">
         <div style="background:var(--primary);color:#fff;padding:11px 16px;font-size:.75rem;font-weight:700;letter-spacing:.06em">STATE HEALTH SUMMARY</div>
         <div id="health-summary" style="padding:6px 0"></div>
+        <div style="padding:10px 14px 14px;border-top:1px solid #eee">
+          <div style="font-size:.7rem;font-weight:600;color:var(--primary);margin-bottom:6px">Schools vs Enrollment by Year</div>
+          <div class="ch-wrap" style="height:175px"><canvas id="c-schools-enroll"></canvas></div>
+        </div>
       </div>
     </div>
 
@@ -996,6 +1000,32 @@ function renderOverviewAll(el, schools, kpi, D){
   };
   mkDeclList(boysDecl,'Boys_Growth_pct','boys-decl-list','boys-decl-footer');
   mkDeclList(girlsDecl,'Girls_Growth_pct','girls-decl-list','girls-decl-footer');
+
+  // ── Schools vs Enrollment Clustered Column Chart ──
+  const yrLabels=['2022-23','2023-24','2024-25','2025-26'];
+  const schCountsByYr=yrLabels.map(yr=>{
+    const col=YRMAP[yr];
+    return schools.filter(s=>parseFloat(s[col]||0)>0).length;
+  });
+  const enrollByYr=yrLabels.map(yr=>{
+    const found=trend.find(r=>r.year===yr);
+    return found?found.total:0;
+  });
+  mkChart('c-schools-enroll',{type:'bar',data:{
+    labels:yrLabels,
+    datasets:[
+      {label:'No. of Schools',data:schCountsByYr,backgroundColor:'rgba(33,150,243,.8)',borderRadius:3,yAxisID:'yS'},
+      {label:'Enrollment',data:enrollByYr,backgroundColor:'rgba(76,175,80,.8)',borderRadius:3,yAxisID:'yE'}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12,padding:8}},
+      tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmtN(c.raw)}`}}},
+    scales:{
+      yS:{type:'linear',position:'left',title:{display:true,text:'Schools',font:{size:9}},ticks:{font:{size:9}},grid:{color:'#f0f4f8'}},
+      yE:{type:'linear',position:'right',title:{display:true,text:'Enrollment',font:{size:9}},ticks:{callback:v=>(v/1000).toFixed(0)+'K',font:{size:9}},grid:{display:false}},
+      x:{ticks:{font:{size:10}},grid:{display:false}}
+    }
+  }});
 
   // ── School Type Cards ──
   const stypeColors={'Full School (1-12)':'#C0392B','Sr Secondary (9-12)':'#1B7A3E','Middle to Higher (6-12)':'#1B7A3E','Mid to Secondary (6-10)':'#1B7A3E','Secondary Only (9-10)':'#1B7A3E'};
