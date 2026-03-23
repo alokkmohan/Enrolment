@@ -211,6 +211,7 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
 <!-- Filter Bar -->
 <div class="fbar">
   <select id="f-year" onchange="applyFilters()">
+    <option value="">All Years</option>
     <option value="2023-24">2023-24</option>
     <option value="2024-25">2024-25</option>
     <option value="2025-26" selected>2025-26</option>
@@ -534,7 +535,7 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
 // GLOBALS
 // ═══════════════════════════════════════════════════════════
 window.dashboardData = null;
-window.activeFilters = {district:'',block:'',schoolType:'',zone:'',year:'2025-26'};
+window.activeFilters = {district:'',block:'',schoolType:'',zone:'',year:''};
 window.charts = {};
 window.pgState = {};   // {key:{page,size,data}}
 window.pgRender = {};  // {key:renderFn}
@@ -726,10 +727,10 @@ function applyFilters(){
 function resetFilters(){
   document.getElementById('f-district').value='';
   document.getElementById('f-block').value='';
-  document.getElementById('f-year').value='2025-26';
+  document.getElementById('f-year').value='';
   const blockSel=document.getElementById('f-block');
   if(blockSel) blockSel.innerHTML='<option value="">All Blocks</option>';
-  window.activeFilters={district:'',block:'',schoolType:'',zone:'',year:'2025-26'};
+  window.activeFilters={district:'',block:'',schoolType:'',zone:'',year:''};
   renderActiveTab();
 }
 
