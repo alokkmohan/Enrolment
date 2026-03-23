@@ -215,7 +215,6 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
   <button class="tbtn" data-tab="blocks">&#128205; Block</button>
   <button class="tbtn" data-tab="schools">&#128269; School Finder</button>
   <button class="tbtn" data-tab="risk">&#9888; Risk Monitor</button>
-  <button class="tbtn" data-tab="schooltype">&#127979; School Type</button>
   <button class="tbtn" data-tab="report">&#128196; Report</button>
 </nav>
 
@@ -562,35 +561,6 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
   </div>
 </div>
 
-<!-- TAB 6: SCHOOL TYPE -->
-<div id="tab-schooltype" class="tpane">
-  <div id="stype-cards" class="g4" style="margin-bottom:14px"></div>
-  <div class="g2">
-    <div class="card"><div class="card-title">Enrollment by School Type (All Years)</div><div class="ch-wrap" style="height:280px"><canvas id="c-stype-enroll"></canvas></div></div>
-    <div class="card"><div class="card-title">Overall Growth% by School Type</div><div class="ch-wrap" style="height:280px"><canvas id="c-stype-growth"></canvas></div></div>
-  </div>
-  <div class="card">
-    <div class="card-title">School Type Detail Table
-      <button class="btn btn-success" onclick="dlXL('stype-data','school_types')">&#11123; Download Excel</button>
-    </div>
-    <div class="tbl-wrap">
-      <table class="dt" id="stype-tbl">
-        <thead><tr>
-          <th onclick="sortTbl('stype-tbl',0,'str')">Type</th>
-          <th onclick="sortTbl('stype-tbl',1,'num')">Schools</th>
-          <th onclick="sortTbl('stype-tbl',2,'num')">Avg Enroll 2022-23</th>
-          <th onclick="sortTbl('stype-tbl',3,'num')">Avg Enroll 2025-26</th>
-          <th onclick="sortTbl('stype-tbl',4,'num')">Growth%</th>
-          <th onclick="sortTbl('stype-tbl',5,'num')">Growing</th>
-          <th onclick="sortTbl('stype-tbl',6,'num')">Declining</th>
-          <th onclick="sortTbl('stype-tbl',7,'num')">Girls Ratio%</th>
-          <th>Health</th>
-        </tr></thead>
-        <tbody id="stype-tbody"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
 
 <!-- TAB 7: REPORT -->
 <div id="tab-report" class="tpane">
@@ -867,7 +837,6 @@ function renderTab(name){
     case 'blocks':     renderBlocks();     break;
     case 'schools':    renderSchools();    break;
     case 'risk':       renderRisk();       break;
-    case 'schooltype': renderSchoolType(); break;
     case 'report':     renderReport();     break;
   }
 }
@@ -1733,83 +1702,6 @@ function renderRisk(){
 }
 
 // ═══════════════════════════════════════════════════════════
-// TAB 6: SCHOOL TYPE
-// ═══════════════════════════════════════════════════════════
-function renderSchoolType(){
-  const D=window.dashboardData;
-  const schools=getSchools();
-
-  // Aggregate by type
-  const typeMap={};
-  schools.forEach(s=>{
-    const t=s.School_Type||'Unknown';
-    if(!typeMap[t]) typeMap[t]={type:t,count:0,e2223:0,e2324:0,e2425:0,e2526:0,girls:0,gCount:0,growing:0,declining:0};
-    typeMap[t].count++;
-    typeMap[t].e2223+=parseFloat(s.Enroll_2223||0);
-    typeMap[t].e2324+=parseFloat(s.Enroll_2324||0);
-    typeMap[t].e2425+=parseFloat(s.Enroll_2425||0);
-    typeMap[t].e2526+=parseFloat(s.Enroll_2526||0);
-    const gr=parseFloat(s.Girls_Ratio_2526||0);
-    if(gr>0){typeMap[t].girls+=gr;typeMap[t].gCount++;}
-    const g=parseFloat(s.Overall_Growth_pct||0);
-    if(g>0) typeMap[t].growing++;
-    if(g<0) typeMap[t].declining++;
-  });
-  const types=Object.values(typeMap).sort((a,b)=>b.count-a.count);
-  window.xlData['stype-data']=types;
-
-  // Type cards
-  document.getElementById('stype-cards').innerHTML=types.map(t=>{
-    const g=t.count&&t.e2223>0?((t.e2526-t.e2223)/t.e2223*100):0;
-    return `<div class="kpi ${g>=0?'success':'danger'}">
-      <div class="kpi-lbl">${t.type}</div>
-      <div class="kpi-val">${fmtN(t.count)}</div>
-      <div class="kpi-sub"><span class="${clrG(g)}">${fmtP(g)}</span></div>
-    </div>`;
-  }).join('');
-
-  // Grouped bar chart
-  const colors=['#2196F3','#4CAF50','#FF9800','#F44336','#9C27B0','#00BCD4'];
-  mkChart('c-stype-enroll',{type:'bar',data:{
-    labels:YRCOLS,
-    datasets:types.map((t,i)=>({
-      label:t.type,
-      data:[t.e2223/t.count||0,t.e2324/t.count||0,t.e2425/t.count||0,t.e2526/t.count||0],
-      backgroundColor:colors[i%colors.length],borderRadius:3
-    }))
-  },options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{position:'bottom'}},
-    scales:{y:{ticks:{callback:v=>fmtN(v)},grid:{color:'#f0f4f8'}},x:{grid:{display:false}}}
-  }});
-
-  // Growth chart
-  const growths=types.map(t=>t.count&&t.e2223>0?((t.e2526-t.e2223)/t.e2223*100):0);
-  mkChart('c-stype-growth',{type:'bar',data:{
-    labels:types.map(t=>t.type),
-    datasets:[{label:'Growth%',data:growths,
-      backgroundColor:growths.map(g=>g>=0?'rgba(76,175,80,.8)':'rgba(244,67,54,.8)'),borderRadius:3,barThickness:22}]
-  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(1)}%`}}},
-    scales:{x:{ticks:{callback:v=>v+'%'},grid:{color:'#f0f4f8'}},y:{ticks:{font:{size:11}}}}
-  }});
-
-  // Table
-  document.getElementById('stype-tbody').innerHTML=types.map(t=>{
-    const g=t.count&&t.e2223>0?((t.e2526-t.e2223)/t.e2223*100):0;
-    const gr=t.gCount?t.girls/t.gCount:0;
-    return `<tr>
-      <td><strong>${t.type}</strong></td>
-      <td style="text-align:center">${fmtN(t.count)}</td>
-      <td style="text-align:right">${fmtN(t.e2223/t.count||0)}</td>
-      <td style="text-align:right">${fmtN(t.e2526/t.count||0)}</td>
-      <td style="text-align:right"><span class="${clrG(g)}">${fmtP(g)}</span></td>
-      <td style="text-align:center">${fmtN(t.growing)}</td>
-      <td style="text-align:center">${fmtN(t.declining)}</td>
-      <td style="text-align:right">${gr?gr.toFixed(1)+'%':'—'}</td>
-      <td>${healthBadge(g>5?'IMPROVING':g>0?'STABLE':'DECLINING')}</td>
-    </tr>`;
-  }).join('');
-}
 
 // ═══════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════
