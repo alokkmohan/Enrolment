@@ -889,6 +889,14 @@ function renderOverviewAll(el, schools, kpi, D){
       </div>
     </div>
 
+    <!-- S2.5: Boys vs Girls Enrollment by Year -->
+    <div class="card">
+      <div class="card-title">&#128104; Boys vs &#128105; Girls Enrollment by Year
+        <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-gender-yr','boys_girls_by_year')">&#128444; PNG</button>
+      </div>
+      <div class="ch-wrap" style="height:240px"><canvas id="c-gender-yr"></canvas></div>
+    </div>
+
     <!-- S3: Boys/Girls Declining -->
     <div class="g2">
       <div class="card">
@@ -1024,6 +1032,37 @@ function renderOverviewAll(el, schools, kpi, D){
       yS:{type:'linear',position:'left',title:{display:true,text:'Schools',font:{size:9}},ticks:{font:{size:9}},grid:{color:'#f0f4f8'}},
       yE:{type:'linear',position:'right',title:{display:true,text:'Enrollment',font:{size:9}},ticks:{callback:v=>(v/1000).toFixed(0)+'K',font:{size:9}},grid:{display:false}},
       x:{ticks:{font:{size:10}},grid:{display:false}}
+    }
+  }});
+
+  // ── Boys vs Girls Enrollment by Year Chart ──
+  const hgData=D.heatmap_gender||[];
+  const girlsRatioByYr={};
+  hgData.forEach(r=>{
+    const yr=r.Year||r.year;
+    if(!girlsRatioByYr[yr]){girlsRatioByYr[yr]={sum:0,cnt:0};}
+    girlsRatioByYr[yr].sum+=parseFloat(r.Avg_Girls_Ratio||0);
+    girlsRatioByYr[yr].cnt++;
+  });
+  const yrTotals={'2022-23':parseFloat(kpi.Total_Enrollment_2223||0),'2023-24':parseFloat(kpi.Total_Enrollment_2324||0),'2024-25':parseFloat(kpi.Total_Enrollment_2425||0),'2025-26':parseFloat(kpi.Total_Enrollment_2526||0)};
+  const gyrLabels=['2022-23','2023-24','2024-25','2025-26'];
+  const girlsEnrollYr=gyrLabels.map(yr=>{
+    const ratio=girlsRatioByYr[yr]?girlsRatioByYr[yr].sum/girlsRatioByYr[yr].cnt:0.58;
+    return Math.round((yrTotals[yr]||0)*ratio);
+  });
+  const boysEnrollYr=gyrLabels.map((yr,i)=>Math.round((yrTotals[yr]||0)-girlsEnrollYr[i]));
+  mkChart('c-gender-yr',{type:'bar',data:{
+    labels:gyrLabels,
+    datasets:[
+      {label:'Boys Enrollment',data:boysEnrollYr,backgroundColor:'rgba(33,150,243,.85)',borderRadius:4},
+      {label:'Girls Enrollment',data:girlsEnrollYr,backgroundColor:'rgba(233,30,99,.8)',borderRadius:4}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:14,padding:10}},
+      tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmtN(c.raw)}`}}},
+    scales:{
+      y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K',font:{size:10}},grid:{color:'#f0f4f8'},title:{display:true,text:'Enrollment',font:{size:10}}},
+      x:{ticks:{font:{size:11}},grid:{display:false}}
     }
   }});
 
