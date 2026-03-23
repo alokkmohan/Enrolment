@@ -845,11 +845,9 @@ function renderOverview(){
     ];
     kpiEl.innerHTML=cards.map(c=>`<div class="kpi ${c.cls}" ${c.fn?`style="cursor:pointer" onclick="${c.fn}"`:''}>
       <div class="kpi-lbl">${c.label}</div><div class="kpi-val">${c.val}</div><div class="kpi-sub">${c.sub}</div>
-    </div>`).join('')
-    + `<div onclick="goToTab('schools')" style="background:linear-gradient(135deg,#1b5e20,#4caf50);border-radius:var(--radius);box-shadow:var(--shadow);padding:10px 14px;max-height:85px;overflow:hidden;cursor:pointer;display:flex;align-items:center;gap:14px">
-        <div style="font-size:2rem;font-weight:700;color:#fff;line-height:1">${fmtN(kpi.Model_Schools)||'—'}</div>
-        <div><div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:rgba(255,255,255,.8);margin-bottom:2px">Model Schools</div><div style="font-size:.62rem;color:rgba(255,255,255,.7)">top performing</div></div>
-      </div>`;
+    </div>`).join('');
+    const footerEl=document.getElementById('dash-footer');
+    if(footerEl) footerEl.innerHTML=`&#127979; <strong>${fmtN(kpi.Model_Schools)||'—'} Model Schools</strong> &nbsp;|&nbsp; top performing schools across the state`;
   }
 
   // Year cards (ALL YEARS only)
@@ -2121,5 +2119,9 @@ fetch('./dashboard_data.json')
     </div>`;
   });
 </script>
+
+<!-- Footer -->
+<div id="dash-footer" style="background:var(--primary);color:rgba(255,255,255,.75);text-align:center;padding:10px 20px;font-size:.75rem;letter-spacing:.03em"></div>
+
 </body>
 </html>
