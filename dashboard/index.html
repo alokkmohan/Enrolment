@@ -303,6 +303,20 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
 
 <!-- TAB 3: BLOCKS -->
 <div id="tab-blocks" class="tpane">
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Top 5 Blocks — Highest Enrollment
+        <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._top5blk,'top_blocks')">&#11123; Excel</button>
+      </div>
+      <div class="tbl-wrap" id="top5blk-tbl"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Bottom 5 Blocks — RED/ORANGE Zone
+        <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._bot5blk,'declined_blocks')">&#11123; Excel</button>
+      </div>
+      <div class="tbl-wrap" id="bot5blk-tbl"></div>
+    </div>
+  </div>
   <div class="card">
     <div class="card-title">Block Zone Cards <span id="bcard-info" style="font-weight:400;color:#888;font-size:.72rem"></span>
       <div class="pgbtns"><button class="pbtn" id="bcard-prev" onclick="pg('bcard',-1)">&#8592;</button><button class="pbtn" id="bcard-next" onclick="pg('bcard',1)">&#8594;</button></div>
@@ -847,30 +861,6 @@ function renderOverviewAll(el, schools, kpi, D){
   const trend=D.enrollment_trend||[];
   const stData=D.school_type_data||[];
 
-  // Build block enrollment from heatmap
-  const blockEnrollMap={};
-  (D.heatmap_enrollment||[]).forEach(h=>{
-    const key=(h.District||h.district||'')+'|'+(h.Block||h.block||'');
-    const yr=h.Year||h.year;
-    if(yr==='2025-26'){
-      blockEnrollMap[key]=(parseInt(h.Total_Enrollment||h.Avg_Enrollment||0)||0);
-    }
-    // Fallback: column format
-    const v=parseInt(h[YRMAP['2025-26']]||0)||0;
-    if(v>0&&!blockEnrollMap[key]) blockEnrollMap[key]=v;
-  });
-
-  const blocksWithEnroll=bh.map(b=>{
-    const key=(b.District||'')+'|'+(b.Block||'');
-    return {...b,realEnroll:blockEnrollMap[key]||0};
-  });
-  const top5blk=[...blocksWithEnroll]
-    .filter(b=>parseFloat(b.Avg_Growth_pct||0)>0&&b.realEnroll>0)
-    .sort((a,b)=>b.realEnroll-a.realEnroll).slice(0,5);
-  const bot5blk=[...blocksWithEnroll]
-    .filter(b=>b.Block_Zone==='RED'||b.Block_Zone==='ORANGE')
-    .sort((a,b)=>parseFloat(a.Avg_Growth_pct||0)-parseFloat(b.Avg_Growth_pct||0)).slice(0,5);
-
   const byEnroll=[...dists].sort((a,b)=>parseFloat(b.Enroll_2526||b.Total_Enrollment_2526||0)-parseFloat(a.Enroll_2526||a.Total_Enrollment_2526||0));
   const top10dist=byEnroll.slice(0,10);
   const bot10dist=[...dists].sort((a,b)=>parseFloat(a.Overall_Growth_pct||0)-parseFloat(b.Overall_Growth_pct||0)).slice(0,10);
@@ -885,7 +875,6 @@ function renderOverviewAll(el, schools, kpi, D){
   const schGrowing=schools.filter(s=>parseFloat(s.Overall_Growth_pct||0)>0).length;
   const schDeclining=schools.filter(s=>parseFloat(s.Overall_Growth_pct||0)<0).length;
 
-  window._top5blk=top5blk; window._bot5blk=bot5blk;
   window._boysDecl=boysDecl; window._girlsDecl=girlsDecl;
 
   el.innerHTML=`
@@ -916,7 +905,7 @@ function renderOverviewAll(el, schools, kpi, D){
     <!-- S4: School Type Cards -->
     <div class="card">
       <div class="card-title">Enrollment by School Type</div>
-      <div id="stype-ov-cards" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px"></div>
+      <div id="stype-ov-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px"></div>
     </div>
 
     <!-- S5: Top/Bottom Districts -->
@@ -932,22 +921,6 @@ function renderOverviewAll(el, schools, kpi, D){
           <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-bot10dist','bottom_districts')">&#128444; PNG</button>
         </div>
         <div class="ch-wrap" style="height:260px"><canvas id="c-bot10dist"></canvas></div>
-      </div>
-    </div>
-
-    <!-- S6: Top/Bottom Blocks -->
-    <div class="g2">
-      <div class="card">
-        <div class="card-title">Top 5 Blocks — Highest Enrollment
-          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._top5blk,'top_blocks')">&#11123; Excel</button>
-        </div>
-        <div class="tbl-wrap" id="top5blk-tbl"></div>
-      </div>
-      <div class="card">
-        <div class="card-title">Bottom 5 Blocks — RED/ORANGE Zone
-          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._bot5blk,'declined_blocks')">&#11123; Excel</button>
-        </div>
-        <div class="tbl-wrap" id="bot5blk-tbl"></div>
       </div>
     </div>
 
@@ -1051,15 +1024,17 @@ function renderOverviewAll(el, schools, kpi, D){
     const dclPct=cnt?(dcl/cnt*100):0;
     const borderCol=g>=0?'#1B7A3E':'#C0392B';
     const enroll=parseInt(t.Total_Enrollment_2526||t.e2526||0);
-    return `<div onclick="goToTab('schooltype')" style="min-width:175px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:12px 14px;border-top:4px solid ${borderCol};cursor:pointer;background:#fff;flex-shrink:0" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,.15)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.08)'">
-      <div style="font-size:.72rem;font-weight:700;color:var(--primary);margin-bottom:6px">${t.School_Type||t.type||'—'}</div>
-      <div style="font-size:.7rem;color:var(--text-muted);margin-bottom:8px">Schools: <strong>${fmtN(cnt)}</strong></div>
-      ${enroll?`<div style="font-size:.7rem;color:var(--text-muted)">Enroll: <strong>${fmtN(enroll)}</strong></div>`:''}
-      <div style="margin:8px 0;font-size:.88rem;font-weight:700;color:${borderCol}">${g>=0?'▲':'▼'}${Math.abs(g).toFixed(1)}%</div>
-      <div style="font-size:.65rem;color:#888;margin-bottom:3px">Growing: ${growPct.toFixed(0)}%</div>
-      <div style="background:#eee;border-radius:3px;height:5px;margin-bottom:3px"><div style="width:${Math.min(growPct,100)}%;background:#1B7A3E;height:5px;border-radius:3px"></div></div>
-      <div style="font-size:.65rem;color:#888;margin-bottom:3px">Declining: ${dclPct.toFixed(0)}%</div>
-      <div style="background:#eee;border-radius:3px;height:5px"><div style="width:${Math.min(dclPct,100)}%;background:#C0392B;height:5px;border-radius:3px"></div></div>
+    return `<div onclick="goToTab('schooltype')" style="border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:18px 20px;border-top:4px solid ${borderCol};cursor:pointer;background:#fff" onmouseover="this.style.boxShadow='0 4px 14px rgba(0,0,0,.14)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.08)'">
+      <div style="font-size:.8rem;font-weight:700;color:var(--primary);margin-bottom:8px">${t.School_Type||t.type||'—'}</div>
+      <div style="display:flex;gap:16px;margin-bottom:10px">
+        <div><div style="font-size:.65rem;color:var(--text-muted)">Schools</div><div style="font-size:1.2rem;font-weight:700;color:var(--primary)">${fmtN(cnt)}</div></div>
+        ${enroll?`<div><div style="font-size:.65rem;color:var(--text-muted)">Enrollment</div><div style="font-size:1.2rem;font-weight:700;color:var(--primary)">${fmtN(enroll)}</div></div>`:''}
+        <div><div style="font-size:.65rem;color:var(--text-muted)">Growth</div><div style="font-size:1.2rem;font-weight:700;color:${borderCol}">${g>=0?'▲':'▼'}${Math.abs(g).toFixed(1)}%</div></div>
+      </div>
+      <div style="font-size:.7rem;color:#888;margin-bottom:4px">Growing: <strong>${growPct.toFixed(0)}%</strong></div>
+      <div style="background:#eee;border-radius:4px;height:7px;margin-bottom:8px"><div style="width:${Math.min(growPct,100)}%;background:#1B7A3E;height:7px;border-radius:4px"></div></div>
+      <div style="font-size:.7rem;color:#888;margin-bottom:4px">Declining: <strong>${dclPct.toFixed(0)}%</strong></div>
+      <div style="background:#eee;border-radius:4px;height:7px"><div style="width:${Math.min(dclPct,100)}%;background:#C0392B;height:7px;border-radius:4px"></div></div>
     </div>`;
   }).join('');
 
@@ -1085,18 +1060,6 @@ function renderOverviewAll(el, schools, kpi, D){
   }});
 
   // ── Block Tables ──
-  const mkBlkTbl=(containerId,rows,isTop)=>{
-    const body=rows.length?rows.map(b=>`<tr style="cursor:pointer" onclick="goToTab('blocks','district','${b.District}')">
-      <td><strong>${b.Block||'—'}</strong></td>
-      <td>${b.District||'—'}</td>
-      <td style="text-align:center">${fmtN(b.Total_Schools||0)}</td>
-      <td style="text-align:right">${fmtN(b.realEnroll)||'—'}</td>
-      <td style="text-align:right"><span class="${clrG(b.Avg_Growth_pct)}">${fmtP(b.Avg_Growth_pct)}</span></td>
-    </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px;color:#888">No data available</td></tr>';
-    document.getElementById(containerId).innerHTML=`<table class="dt"><thead><tr><th>Block</th><th>District</th><th>Schools</th><th>Enrollment</th><th>Growth%</th></tr></thead><tbody>${body}</tbody></table>`;
-  };
-  mkBlkTbl('top5blk-tbl',top5blk,true);
-  mkBlkTbl('bot5blk-tbl',bot5blk,false);
 }
 
 function renderOverviewYear(el, schools, yr){
@@ -1254,6 +1217,34 @@ function renderBlocks(){
   const D=window.dashboardData;
   const blocks=getBlocks();
   window.xlData['block-data']=blocks;
+
+  // ── Top 5 / Bottom 5 Blocks ──
+  const bh=D.block_health||[];
+  const blkEnrollMap={};
+  (D.heatmap_enrollment||[]).forEach(h=>{
+    const key=(h.District||h.district||'')+'|'+(h.Block||h.block||'');
+    const yr=h.Year||h.year;
+    if(yr==='2025-26') blkEnrollMap[key]=(parseInt(h.Total_Enrollment||h.Avg_Enrollment||0)||0);
+    const v=parseInt(h[YRMAP['2025-26']]||0)||0;
+    if(v>0&&!blkEnrollMap[key]) blkEnrollMap[key]=v;
+  });
+  const blksWithEnroll=bh.map(b=>({...b,realEnroll:blkEnrollMap[(b.District||'')+'|'+(b.Block||'')]||0}));
+  const top5blk=[...blksWithEnroll].filter(b=>parseFloat(b.Avg_Growth_pct||0)>0&&b.realEnroll>0)
+    .sort((a,b)=>b.realEnroll-a.realEnroll).slice(0,5);
+  const bot5blk=[...blksWithEnroll].filter(b=>b.Block_Zone==='RED'||b.Block_Zone==='ORANGE')
+    .sort((a,b)=>parseFloat(a.Avg_Growth_pct||0)-parseFloat(b.Avg_Growth_pct||0)).slice(0,5);
+  window._top5blk=top5blk; window._bot5blk=bot5blk;
+  const mkBlkTbl=(containerId,rows)=>{
+    const body=rows.length?rows.map(b=>`<tr style="cursor:pointer" onclick="goToTab('blocks','district','${b.District}')">
+      <td><strong>${b.Block||'—'}</strong></td><td>${b.District||'—'}</td>
+      <td style="text-align:center">${fmtN(b.Total_Schools||0)}</td>
+      <td style="text-align:right">${fmtN(b.realEnroll)||'—'}</td>
+      <td style="text-align:right"><span class="${clrG(b.Avg_Growth_pct)}">${fmtP(b.Avg_Growth_pct)}</span></td>
+    </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px;color:#888">No data</td></tr>';
+    document.getElementById(containerId).innerHTML=`<table class="dt"><thead><tr><th>Block</th><th>District</th><th>Schools</th><th>Enrollment</th><th>Growth%</th></tr></thead><tbody>${body}</tbody></table>`;
+  };
+  mkBlkTbl('top5blk-tbl',top5blk);
+  mkBlkTbl('bot5blk-tbl',bot5blk);
 
   // Block cards
   initPg('bcard',blocks,30,()=>{
