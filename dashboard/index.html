@@ -745,11 +745,13 @@ function onDistrictChange(){
   window.activeFilters.district=dist;
   const D=window.dashboardData;
   const blockSel=document.getElementById('f-block');
-  blockSel.innerHTML='<option value="">All Blocks</option>';
-  if(dist&&D.filter_options&&D.filter_options.blocks&&D.filter_options.blocks[dist]){
-    D.filter_options.blocks[dist].forEach(b=>{
-      blockSel.innerHTML+=`<option value="${b}">${b}</option>`;
-    });
+  if(blockSel){
+    blockSel.innerHTML='<option value="">All Blocks</option>';
+    if(dist&&D.filter_options&&D.filter_options.blocks&&D.filter_options.blocks[dist]){
+      D.filter_options.blocks[dist].forEach(b=>{
+        blockSel.innerHTML+=`<option value="${b}">${b}</option>`;
+      });
+    }
   }
   applyFilters();
 }
