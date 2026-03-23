@@ -30,7 +30,7 @@ body{font-family:'Inter',sans-serif;background:var(--light-bg);color:var(--text-
 .hdr-right{font-size:.72rem;opacity:.75;text-align:right;}
 
 /* Filter Bar */
-.fbar{background:#fff;border-bottom:2px solid var(--border);padding:8px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;box-shadow:0 2px 6px rgba(0,0,0,.06);}
+.fbar{background:#fff;border-bottom:1px solid var(--border);padding:8px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .fbar select,.fbar input{font-size:.78rem;padding:5px 9px;border:1px solid var(--border);border-radius:6px;font-family:inherit;background:#fff;cursor:pointer;}
 .fbar select:focus{outline:none;border-color:var(--secondary);}
 .btn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:6px;border:none;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s;}
@@ -208,19 +208,6 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
   </div>
 </header>
 
-<!-- Filter Bar -->
-<div class="fbar">
-  <select id="f-year" onchange="applyFilters()">
-    <option value="">All Years</option>
-    <option value="2023-24">2023-24</option>
-    <option value="2024-25">2024-25</option>
-    <option value="2025-26" selected>2025-26</option>
-  </select>
-  <select id="f-district" onchange="onDistrictChange()"><option value="">All Districts</option></select>
-  <select id="f-block" onchange="applyFilters()"><option value="">All Blocks</option></select>
-  <button class="btn btn-outline" onclick="resetFilters()">&#8635; Reset</button>
-</div>
-
 <!-- Tab Nav -->
 <nav class="tabnav">
   <button class="tbtn active" data-tab="overview">&#127968; State Overview</button>
@@ -241,6 +228,17 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
 
 <!-- TAB 2: DISTRICTS -->
 <div id="tab-districts" class="tpane">
+  <div class="fbar" style="position:static;margin-bottom:14px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
+    <select id="f-year" onchange="applyFilters()">
+      <option value="">All Years</option>
+      <option value="2023-24">2023-24</option>
+      <option value="2024-25">2024-25</option>
+      <option value="2025-26" selected>2025-26</option>
+    </select>
+    <select id="f-district" onchange="onDistrictChange()"><option value="">All Districts</option></select>
+    <select id="f-block" onchange="applyFilters()"><option value="">All Blocks</option></select>
+    <button class="btn btn-outline" onclick="resetFilters()">&#8635; Reset</button>
+  </div>
   <div class="card">
     <div class="card-title">District Enrollment Growth Ranking</div>
     <div class="ch-wrap" style="height:320px"><canvas id="c-distrank"></canvas></div>
