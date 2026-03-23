@@ -229,8 +229,12 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
 <!-- TAB 2: DISTRICTS -->
 <div id="tab-districts" class="tpane">
   <div class="fbar" style="position:static;margin-bottom:14px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
-    <select id="f-district" onchange="onDistrictChange()"><option value="">All Districts</option></select>
+    <select id="f-district"><option value="">All Districts</option></select>
+    <button class="btn btn-primary" onclick="onDistrictChange()">&#9654; Go</button>
     <button class="btn btn-outline" onclick="resetFilters()">&#8635; Reset</button>
+    <span id="dist-loading" style="display:none;font-size:.78rem;color:var(--text-muted);display:none;align-items:center;gap:6px">
+      <span style="width:14px;height:14px;border:2px solid #ccc;border-top-color:var(--primary);border-radius:50%;display:inline-block;animation:sp .7s linear infinite"></span> Loading...
+    </span>
   </div>
   <!-- District Detail Panel (shown when district selected) -->
   <div id="dist-detail" style="display:none">
@@ -753,7 +757,12 @@ function onDistrictChange(){
       });
     }
   }
-  applyFilters();
+  const loadEl=document.getElementById('dist-loading');
+  if(loadEl) loadEl.style.display='inline-flex';
+  setTimeout(()=>{
+    applyFilters();
+    if(loadEl) loadEl.style.display='none';
+  },0);
 }
 function applyFilters(){
   const dEl=document.getElementById('f-district');
