@@ -24,13 +24,13 @@ body{font-family:'Inter',sans-serif;background:var(--light-bg);color:var(--text-
 #loader.hidden{display:none;}
 
 /* Header */
-.hdr{background:var(--primary);color:#fff;height:60px;padding:0 24px;display:flex;justify-content:space-between;align-items:center;}
+.hdr{position:sticky;top:0;z-index:101;background:var(--primary);color:#fff;height:60px;padding:0 24px;display:flex;justify-content:space-between;align-items:center;}
 .hdr-left h1{font-size:1.1rem;font-weight:700;}
 .hdr-left p{font-size:.72rem;opacity:.75;margin-top:1px;}
 .hdr-right{font-size:.72rem;opacity:.75;text-align:right;}
 
 /* Filter Bar */
-.fbar{position:sticky;top:0;z-index:100;background:#fff;border-bottom:2px solid var(--border);padding:8px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;box-shadow:0 2px 6px rgba(0,0,0,.06);}
+.fbar{position:sticky;top:60px;z-index:100;background:#fff;border-bottom:2px solid var(--border);padding:8px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;box-shadow:0 2px 6px rgba(0,0,0,.06);}
 .fbar select,.fbar input{font-size:.78rem;padding:5px 9px;border:1px solid var(--border);border-radius:6px;font-family:inherit;background:#fff;cursor:pointer;}
 .fbar select:focus{outline:none;border-color:var(--secondary);}
 .btn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:6px;border:none;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s;}
@@ -41,7 +41,7 @@ body{font-family:'Inter',sans-serif;background:var(--light-bg);color:var(--text-
 .btn:hover{opacity:.85;}
 
 /* Tabs */
-.tabnav{background:#fff;border-bottom:2px solid var(--border);display:flex;overflow-x:auto;padding:0 16px;}
+.tabnav{position:sticky;top:108px;z-index:99;background:#fff;border-bottom:2px solid var(--border);display:flex;overflow-x:auto;padding:0 16px;}
 .tbtn{padding:11px 16px;border:none;background:none;font-family:inherit;font-size:.8rem;font-weight:600;color:var(--text-muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:.15s;}
 .tbtn.active{color:var(--primary);border-bottom-color:var(--primary);}
 .tbtn:hover{color:var(--primary);}
