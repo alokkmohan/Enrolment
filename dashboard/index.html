@@ -281,6 +281,24 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
     <div class="card"><div class="card-title">Girls vs Boys Growth (Top 20 Districts)</div><div class="ch-wrap" style="height:260px"><canvas id="c-gender"></canvas></div></div>
     <div class="card"><div class="card-title">Enrollment Trend — Top 10 Districts</div><div class="ch-wrap" style="height:260px"><canvas id="c-disttrend"></canvas></div></div>
   </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">&#128104; Boys Enrollment Declining
+        <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlBoysDecl()">&#11123; Excel</button>
+      </div>
+      <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:8px">Districts where boys enrollment fell</div>
+      <div id="dist-boys-decl-list"></div>
+      <div id="dist-boys-decl-footer" style="font-size:.72rem;color:var(--text-muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">&#128105; Girls Enrollment Declining
+        <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlGirlsDecl()">&#11123; Excel</button>
+      </div>
+      <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:8px">Districts where girls enrollment fell</div>
+      <div id="dist-girls-decl-list"></div>
+      <div id="dist-girls-decl-footer" style="font-size:.72rem;color:var(--text-muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"></div>
+    </div>
+  </div>
 </div>
 
 <!-- TAB 3: BLOCKS -->
@@ -879,13 +897,11 @@ function renderOverviewAll(el, schools, kpi, D){
         </div>
         <div class="ch-wrap" style="height:220px"><canvas id="c-trend"></canvas></div>
       </div>
-      <div class="card" style="padding:0;overflow:hidden">
-        <div style="background:var(--primary);color:#fff;padding:11px 16px;font-size:.75rem;font-weight:700;letter-spacing:.06em">STATE HEALTH SUMMARY</div>
-        <div id="health-summary" style="padding:6px 0"></div>
-        <div style="padding:10px 14px 14px;border-top:1px solid #eee">
-          <div style="font-size:.7rem;font-weight:600;color:var(--primary);margin-bottom:6px">Schools vs Enrollment by Year</div>
-          <div class="ch-wrap" style="height:175px"><canvas id="c-schools-enroll"></canvas></div>
+      <div class="card">
+        <div class="card-title">Schools vs Enrollment by Year
+          <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-schools-enroll','schools_vs_enrollment')">&#128444; PNG</button>
         </div>
+        <div class="ch-wrap" style="height:220px"><canvas id="c-schools-enroll"></canvas></div>
       </div>
     </div>
 
@@ -895,26 +911,6 @@ function renderOverviewAll(el, schools, kpi, D){
         <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-gender-yr','boys_girls_by_year')">&#128444; PNG</button>
       </div>
       <div class="ch-wrap" style="height:240px"><canvas id="c-gender-yr"></canvas></div>
-    </div>
-
-    <!-- S3: Boys/Girls Declining -->
-    <div class="g2">
-      <div class="card">
-        <div class="card-title">&#128104; Boys Enrollment Declining
-          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlBoysDecl()">&#11123; Excel</button>
-        </div>
-        <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:8px">Districts where boys enrollment fell</div>
-        <div id="boys-decl-list"></div>
-        <div id="boys-decl-footer" style="font-size:.72rem;color:var(--text-muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"></div>
-      </div>
-      <div class="card">
-        <div class="card-title">&#128105; Girls Enrollment Declining
-          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlGirlsDecl()">&#11123; Excel</button>
-        </div>
-        <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:8px">Districts where girls enrollment fell</div>
-        <div id="girls-decl-list"></div>
-        <div id="girls-decl-footer" style="font-size:.72rem;color:var(--text-muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"></div>
-      </div>
     </div>
 
     <!-- S4: School Type Cards -->
@@ -977,37 +973,6 @@ function renderOverviewAll(el, schools, kpi, D){
     scales:{y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},x:{grid:{display:false}}}
   }});
 
-  // ── Health Summary ──
-  const hRows=[
-    {label:'Growing Districts',val:distGrowing,color:'#1B7A3E',icon:'&#128994;',fn:"goToTab('districts')"},
-    {label:'Declining Districts',val:distDeclining,color:'#C0392B',icon:'&#128308;',fn:"goToTab('districts')"},
-    {label:'Growing Schools',val:fmtN(schGrowing),color:'#1B7A3E',icon:'&#128994;',fn:"goToTab('schools')"},
-    {label:'Declining Schools',val:fmtN(schDeclining),color:'#C0392B',icon:'&#128308;',fn:"goToTab('risk')"},
-    {label:'Model Schools',val:fmtN(kpi.Model_Schools),color:'#1a3a5c',icon:'&#11088;',fn:"goToTab('schools')"},
-    {label:'Closure Risk',val:fmtN(kpi.Closure_Risk_Schools),color:'#C0392B',icon:'&#128680;',fn:"goToTab('risk')"},
-    {label:'Avg Girls Ratio',val:kpi.Avg_Girls_Ratio?parseFloat(kpi.Avg_Girls_Ratio).toFixed(2)+'%':'—',color:'#7b1fa2',icon:'&#128105;',fn:"goToTab('schools')"},
-    {label:'Critical Alerts',val:fmtN(kpi.Critical_Alert_Types),color:'#E67E22',icon:'&#9888;',fn:"goToTab('risk')"},
-  ];
-  const dividers=[1,3,5]; // after index 1,3,5 add a divider
-  document.getElementById('health-summary').innerHTML=hRows.map((r,i)=>`
-    ${i>0&&dividers.includes(i)?'<div style="border-top:1px solid #eee;margin:2px 0"></div>':'' }
-    <div onclick="${r.fn}" style="display:flex;justify-content:space-between;align-items:center;padding:7px 16px;cursor:pointer;transition:.15s" onmouseover="this.style.background='#f5f7fa'" onmouseout="this.style.background=''">
-      <span style="font-size:.78rem;color:#444">${r.icon} ${r.label}</span>
-      <strong style="font-size:.88rem;color:${r.color}">${r.val}</strong>
-    </div>`).join('');
-
-  // ── Boys/Girls Declining Lists ──
-  const mkDeclList=(arr,pctField,listId,footerId)=>{
-    const top8=arr.slice(0,8);
-    document.getElementById(listId).innerHTML=top8.map(d=>`
-      <div onclick="goToTab('districts','district','${d.District}')" style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f0f0f0;cursor:pointer;font-size:.78rem" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background=''">
-        <span style="color:var(--primary)">${d.District||'—'}</span>
-        <span style="color:#C0392B;font-weight:600">&#9660; ${Math.abs(parseFloat(d[pctField]||0)).toFixed(1)}%</span>
-      </div>`).join('');
-    document.getElementById(footerId).textContent=`Total ${arr.length} districts with declining enrollment`;
-  };
-  mkDeclList(boysDecl,'Boys_Growth_pct','boys-decl-list','boys-decl-footer');
-  mkDeclList(girlsDecl,'Girls_Growth_pct','girls-decl-list','girls-decl-footer');
 
   // ── Schools vs Enrollment Clustered Column Chart ──
   const yrLabels=['2022-23','2023-24','2024-25','2025-26'];
@@ -1257,6 +1222,24 @@ function renderDistricts(){
     plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10}}},
     scales:{y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},x:{grid:{display:false}}}
   }});
+
+  // ── Boys/Girls Declining Lists ──
+  const allDists=[...(D.district_data||[])];
+  const bDecl=[...allDists].filter(d=>parseFloat(d.Boys_Growth_pct||0)<0)
+    .sort((a,b)=>parseFloat(a.Boys_Growth_pct||0)-parseFloat(b.Boys_Growth_pct||0));
+  const gDecl=[...allDists].filter(d=>parseFloat(d.Girls_Growth_pct||0)<0)
+    .sort((a,b)=>parseFloat(a.Girls_Growth_pct||0)-parseFloat(b.Girls_Growth_pct||0));
+  window._boysDecl=bDecl; window._girlsDecl=gDecl;
+  const renderDeclList=(arr,pctField,listId,footerId)=>{
+    document.getElementById(listId).innerHTML=arr.map(d=>`
+      <div onclick="filterByDistrict('${d.District}')" style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f0f0f0;cursor:pointer;font-size:.78rem" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background=''">
+        <span style="color:var(--primary)">${d.District||'—'}</span>
+        <span style="color:#C0392B;font-weight:600">&#9660; ${Math.abs(parseFloat(d[pctField]||0)).toFixed(1)}%</span>
+      </div>`).join('');
+    document.getElementById(footerId).textContent=`Total ${arr.length} districts with declining enrollment`;
+  };
+  renderDeclList(bDecl,'Boys_Growth_pct','dist-boys-decl-list','dist-boys-decl-footer');
+  renderDeclList(gDecl,'Girls_Growth_pct','dist-girls-decl-list','dist-girls-decl-footer');
 }
 
 function filterByDistrict(dist){
