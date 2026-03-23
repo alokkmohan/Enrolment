@@ -613,6 +613,7 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
   <div id="rpt-s5" class="rpt-sec"></div>
   <div id="rpt-s6" class="rpt-sec"></div>
   <div id="rpt-s7" class="rpt-sec"></div>
+  <div id="rpt-s8" class="rpt-sec"></div>
 </div>
 
 </div><!-- /app -->
@@ -1581,40 +1582,6 @@ function renderBlockDetail(distName,blkName,D){
   mkST('blk-girls-decl-tbl',girlsDecl,'Girls_Growth_pct','No girls declining schools');
 }
 
-function renderHeatmap(){
-  const D=window.dashboardData;
-  const hm=D.heatmap_enrollment||[];
-  if(!hm.length){document.getElementById('heatmap-tbl').innerHTML='<tr><td>Data not available</td></tr>';return;}
-  const {district}=window.activeFilters;
-  let rows=hm;
-  if(district) rows=hm.filter(r=>(r.District||'')===district);
-  // Determine all year columns in data
-  const sampleKeys=Object.keys(rows[0]||{}).filter(k=>k.match(/\d{4}-\d{2}/)||k.match(/Enroll_\d{4}/));
-  const cols=YRCOLS.filter(y=>{const c=YRMAP[y];return rows.some(r=>r[c]!=null||r[y]!=null);});
-
-  // Min/max for color
-  const allVals=[];
-  rows.forEach(r=>cols.forEach(y=>{const v=parseFloat(r[YRMAP[y]]||r[y]||0);if(v>0)allVals.push(v);}));
-  const mn=Math.min(...allVals),mx=Math.max(...allVals);
-
-  const heatColor=(v)=>{
-    if(!v||v===0) return '#f5f5f5';
-    const pct=(v-mn)/(mx-mn||1);
-    if(pct<0.33) return '#ffcdd2';
-    if(pct<0.67) return '#fff9c4';
-    return '#c8e6c9';
-  };
-
-  const limited=rows.slice(0,100);
-  const thead=`<thead><tr><th>Block</th><th>District</th>${cols.map(y=>`<th>${y}</th>`).join('')}</tr></thead>`;
-  const tbody='<tbody>'+limited.map(r=>`<tr>
-    <td class="bnm">${r.Block||r.block||'—'}</td>
-    <td class="bnm">${r.District||r.district||'—'}</td>
-    ${cols.map(y=>{const v=parseFloat(r[YRMAP[y]]||r[y]||0);return `<td style="background:${heatColor(v)}">${v?fmtN(v):'—'}</td>`;}).join('')}
-  </tr>`).join('')+'</tbody>';
-  document.getElementById('heatmap-tbl').innerHTML=thead+tbody;
-}
-
 // ═══════════════════════════════════════════════════════════
 // TAB 4: SCHOOL FINDER
 // ═══════════════════════════════════════════════════════════
@@ -2188,6 +2155,51 @@ function rptSec7(boysDeclined){
     </table></div>`;
 }
 
+// ── Section 8: Block Health Table ────────────────────────────
+function rptSec8(bh){
+  const allBh=[...bh].sort((a,b)=>{
+    const zOrder={RED:0,ORANGE:1,YELLOW:2,GREEN:3};
+    return (zOrder[a.Block_Zone]??9)-(zOrder[b.Block_Zone]??9)||parseFloat(a.Avg_Growth_pct||0)-parseFloat(b.Avg_Growth_pct||0);
+  });
+  const rows=allBh.length?allBh.map(b=>`<tr>
+    <td>${b.District||'—'}</td>
+    <td>${b.Block||'—'}</td>
+    <td style="text-align:center">${zoneBadge(b.Block_Zone)}</td>
+    <td style="text-align:right">${fmtN(b.Total_Schools)}</td>
+    <td style="text-align:right">${fmtN(b.Growing_Schools)}</td>
+    <td style="text-align:right">${fmtN(b.Declining_Schools)}</td>
+    <td style="text-align:right">${fmtN(b.Boys_Declining_Schools||'—')}</td>
+    <td style="text-align:right">${fmtN(b.Girls_Declining_Schools||'—')}</td>
+    <td style="text-align:right">${grwCell(b.Avg_Growth_pct)}</td>
+    <td style="text-align:right">${grwCell(b.Boys_Avg_Growth_pct||b.Boys_Growth_pct)}</td>
+    <td style="text-align:right">${grwCell(b.Girls_Avg_Growth_pct||b.Girls_Growth_pct)}</td>
+  </tr>`).join(''):'<tr><td colspan="11" style="text-align:center;padding:20px;color:#888">Block health data not available</td></tr>';
+  const red=bh.filter(b=>b.Block_Zone==='RED').length;
+  const orange=bh.filter(b=>b.Block_Zone==='ORANGE').length;
+  const green=bh.filter(b=>b.Block_Zone==='GREEN').length;
+  document.getElementById('rpt-s8').innerHTML=`
+    ${rptSecHdr(8,'Block Health Summary',dlBtn("dlXLSec('blockHealth')"))}
+    ${rptSummary(`<strong style="color:#C0392B">${red} RED</strong> · <strong style="color:#E67E22">${orange} ORANGE</strong> · <strong style="color:#27AE60">${green} GREEN</strong> — Total <strong>${bh.length} blocks</strong>`)}
+    ${rptSearch('rpt-tbl8','Search district or block...')}
+    <div style="max-height:450px;overflow:auto">
+    <table class="dt" id="rpt-tbl8">
+      <thead><tr>
+        <th onclick="sortTbl('rpt-tbl8',0,'str')">District</th>
+        <th onclick="sortTbl('rpt-tbl8',1,'str')">Block</th>
+        <th onclick="sortTbl('rpt-tbl8',2,'str')">Zone</th>
+        <th onclick="sortTbl('rpt-tbl8',3,'num')">Total Schools</th>
+        <th onclick="sortTbl('rpt-tbl8',4,'num')">Growing</th>
+        <th onclick="sortTbl('rpt-tbl8',5,'num')">Declining</th>
+        <th onclick="sortTbl('rpt-tbl8',6,'num')">Boys&#8595;</th>
+        <th onclick="sortTbl('rpt-tbl8',7,'num')">Girls&#8595;</th>
+        <th onclick="sortTbl('rpt-tbl8',8,'num')">Overall%</th>
+        <th onclick="sortTbl('rpt-tbl8',9,'num')">Boys%</th>
+        <th onclick="sortTbl('rpt-tbl8',10,'num')">Girls%</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
 // ── MAIN renderReport ────────────────────────────────────────
 function renderReport(){
   const D=window.dashboardData;
@@ -2251,6 +2263,8 @@ function renderReport(){
   rptSec5(schoolsDeclined,girlsAlsoDeclined);
   rptSec6(girlsDeclined);
   rptSec7(boysDeclined);
+  rptSec8(bh);
+  window.rptData.blockHealth=bh;
 }
 
 // ── Excel downloads ──────────────────────────────────────────
@@ -2379,6 +2393,13 @@ function initDashboard(data){
   const distSel=document.getElementById('f-district');
   (fo.districts||[]).sort().forEach(d=>{distSel.innerHTML+=`<option value="${d}">${d}</option>`;});
   // f-type removed from filter bar — skip population
+
+  // Populate block tab district dropdown
+  const blkDistSel=document.getElementById('blk-f-district');
+  if(blkDistSel)(fo.districts||[]).sort().forEach(d=>{blkDistSel.innerHTML+=`<option value="${d}">${d}</option>`;});
+
+  // Init block filters
+  window.blkFilters={district:'',block:''};
 
   // Tab click events
   document.querySelectorAll('.tbtn').forEach(btn=>{
