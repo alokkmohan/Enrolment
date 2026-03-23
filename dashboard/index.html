@@ -30,7 +30,7 @@ body{font-family:'Inter',sans-serif;background:var(--light-bg);color:var(--text-
 .hdr-right{font-size:.72rem;opacity:.75;text-align:right;}
 
 /* Filter Bar */
-.fbar{position:sticky;top:0;z-index:100;background:#fff;border-bottom:2px solid var(--border);padding:8px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;box-shadow:0 2px 6px rgba(0,0,0,.06);}
+.fbar{position:sticky;top:0;z-index:100;background:#fff;border-bottom:2px solid var(--border);padding:8px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.06);}
 .fbar select,.fbar input{font-size:.78rem;padding:5px 9px;border:1px solid var(--border);border-radius:6px;font-family:inherit;background:#fff;cursor:pointer;}
 .fbar select:focus{outline:none;border-color:var(--secondary);}
 .btn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:6px;border:none;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s;}
@@ -210,23 +210,13 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
 
 <!-- Filter Bar -->
 <div class="fbar">
-  <select id="f-district" onchange="onDistrictChange()"><option value="">All Districts</option></select>
-  <select id="f-block" onchange="applyFilters()"><option value="">All Blocks</option></select>
-  <select id="f-type" onchange="applyFilters()"><option value="">All School Types</option></select>
-  <select id="f-zone" onchange="applyFilters()">
-    <option value="">All Zones</option>
-    <option value="RED">RED Zone</option>
-    <option value="ORANGE">ORANGE Zone</option>
-    <option value="YELLOW">YELLOW Zone</option>
-    <option value="GREEN">GREEN Zone</option>
-  </select>
   <select id="f-year" onchange="applyFilters()">
-    <option value="">All Years</option>
-    <option value="2022-23">2022-23</option>
     <option value="2023-24">2023-24</option>
     <option value="2024-25">2024-25</option>
-    <option value="2025-26">2025-26</option>
+    <option value="2025-26" selected>2025-26</option>
   </select>
+  <select id="f-district" onchange="onDistrictChange()"><option value="">All Districts</option></select>
+  <select id="f-block" onchange="applyFilters()"><option value="">All Blocks</option></select>
   <button class="btn btn-outline" onclick="resetFilters()">&#8635; Reset</button>
 </div>
 
@@ -544,7 +534,7 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
 // GLOBALS
 // ═══════════════════════════════════════════════════════════
 window.dashboardData = null;
-window.activeFilters = {district:'',block:'',schoolType:'',zone:'',year:''};
+window.activeFilters = {district:'',block:'',schoolType:'',zone:'',year:'2025-26'};
 window.charts = {};
 window.pgState = {};   // {key:{page,size,data}}
 window.pgRender = {};  // {key:renderFn}
@@ -730,19 +720,16 @@ function onDistrictChange(){
 function applyFilters(){
   window.activeFilters.district=document.getElementById('f-district').value;
   window.activeFilters.block=document.getElementById('f-block').value;
-  window.activeFilters.schoolType=document.getElementById('f-type').value;
-  window.activeFilters.zone=document.getElementById('f-zone').value;
   window.activeFilters.year=document.getElementById('f-year').value;
   renderActiveTab();
 }
 function resetFilters(){
-  ['f-district','f-block','f-type','f-zone','f-year'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el) el.value='';
-  });
+  document.getElementById('f-district').value='';
+  document.getElementById('f-block').value='';
+  document.getElementById('f-year').value='2025-26';
   const blockSel=document.getElementById('f-block');
   if(blockSel) blockSel.innerHTML='<option value="">All Blocks</option>';
-  window.activeFilters={district:'',block:'',schoolType:'',zone:'',year:''};
+  window.activeFilters={district:'',block:'',schoolType:'',zone:'',year:'2025-26'};
   renderActiveTab();
 }
 
@@ -815,62 +802,46 @@ function renderOverview(){
   const schools=getSchools();
   const yr=window.activeFilters.year;
 
-  // KPI Cards
+  // KPI Cards — same 5 cards always, values update by year
   const kpiEl=document.getElementById('ov-kpi-row');
-  if(yr){
-    const col=YRMAP[yr]||'Enroll_2526';
-    const prevCol=YRMAP[YRCOLS[YRCOLS.indexOf(yr)-1]]||null;
-    const total=schools.reduce((s,sc)=>s+(parseFloat(sc[col])||0),0);
-    const prevTotal=prevCol?schools.reduce((s,sc)=>s+(parseFloat(sc[prevCol])||0),0):null;
-    const chgPct=prevTotal&&prevTotal>0?((total-prevTotal)/prevTotal*100):null;
-    const growing=schools.filter(s=>parseFloat(s.Overall_Growth_pct||0)>0).length;
-    const declining=schools.filter(s=>parseFloat(s.Overall_Growth_pct||0)<0).length;
-    const stable=schools.length-growing-declining;
-    const cards=[
-      {label:'Total Enrollment',val:fmtN(total),sub:yr,cls:'primary'},
-      {label:'Schools',val:fmtN(schools.length),sub:'with data',cls:'secondary'},
-      {label:'Growth vs Prev Year',val:chgPct!=null?fmtP(chgPct):'—',sub:'change',cls:chgPct>=0?'success':'danger'},
-      {label:'Growing Schools',val:fmtN(growing),sub:'▲ enrollment up',cls:'success'},
-      {label:'Declining Schools',val:fmtN(declining),sub:'▼ enrollment down',cls:'danger'},
-      {label:'Stable Schools',val:fmtN(stable),sub:'no significant change',cls:'warning'},
-    ];
-    kpiEl.innerHTML=cards.map(c=>`<div class="kpi ${c.cls}"><div class="kpi-lbl">${c.label}</div><div class="kpi-val">${c.val}</div><div class="kpi-sub">${c.sub}</div></div>`).join('');
-  } else {
-    const cards=[
-      {label:'Total Schools',val:fmtN(kpi.Total_Schools),sub:`Filtered: ${fmtN(schools.length)}`,cls:'primary',fn:"goToTab('schools')"},
-      {label:'Enrollment 2025-26',val:fmtN(kpi.Total_Enrollment_2526),sub:`Base: ${fmtN(kpi.Total_Enrollment_2223)}`,cls:'secondary',fn:''},
-      {label:'Overall Growth',val:fmtG(kpi.Overall_Enrollment_Growth_pct),sub:'4-year change',cls:parseFloat(kpi.Overall_Enrollment_Growth_pct||0)>=0?'success':'danger',fn:''},
-      {label:'High Risk Schools',val:fmtN(kpi.High_Risk_Schools),sub:`${fmtN(kpi.Medium_Risk_Schools)} Medium Risk`,cls:'danger',fn:"goToTab('risk')"},
-      {label:'RED Zone Blocks',val:fmtN(kpi.Red_Zone_Blocks),sub:`of ${fmtN(kpi.Total_Blocks)} blocks`,cls:'danger',fn:"goToTab('blocks','zone','RED')"},
-    ];
-    kpiEl.innerHTML=cards.map(c=>`<div class="kpi ${c.cls}" ${c.fn?`style="cursor:pointer" onclick="${c.fn}"`:''}>
-      <div class="kpi-lbl">${c.label}</div><div class="kpi-val">${c.val}</div><div class="kpi-sub">${c.sub}</div>
-    </div>`).join('');
-    const footerEl=document.getElementById('dash-footer');
-    if(footerEl) footerEl.innerHTML=`&#127979; <strong>${fmtN(kpi.Model_Schools)||'—'} Model Schools</strong> &nbsp;|&nbsp; top performing schools across the state`;
-  }
+  const displayYr=yr||'2025-26';
+  const col=YRMAP[displayYr]||'Enroll_2526';
+  const prevYrIdx=YRCOLS.indexOf(displayYr)-1;
+  const prevCol=prevYrIdx>=0?YRMAP[YRCOLS[prevYrIdx]]:null;
+  const total=schools.reduce((s,sc)=>s+(parseFloat(sc[col])||0),0);
+  const prevTotal=prevCol?schools.reduce((s,sc)=>s+(parseFloat(sc[prevCol])||0),0):parseFloat(kpi.Total_Enrollment_2223||0);
+  const chgPct=prevTotal>0?((total-prevTotal)/prevTotal*100):null;
+  const cards=[
+    {label:'Total Schools',val:fmtN(kpi.Total_Schools),sub:`Filtered: ${fmtN(schools.length)}`,cls:'primary',fn:"goToTab('schools')"},
+    {label:`Enrollment ${displayYr}`,val:fmtN(total),sub:`Base: ${fmtN(prevTotal)}`,cls:'secondary',fn:''},
+    {label:'Growth',val:chgPct!=null?fmtP(chgPct):'—',sub:'vs previous year',cls:chgPct!=null&&chgPct>=0?'success':'danger',fn:''},
+    {label:'High Risk Schools',val:fmtN(kpi.High_Risk_Schools),sub:`${fmtN(kpi.Medium_Risk_Schools)} Medium Risk`,cls:'danger',fn:"goToTab('risk')"},
+    {label:'RED Zone Blocks',val:fmtN(kpi.Red_Zone_Blocks),sub:`of ${fmtN(kpi.Total_Blocks)} blocks`,cls:'danger',fn:"goToTab('blocks','zone','RED')"},
+  ];
+  kpiEl.innerHTML=cards.map(c=>`<div class="kpi ${c.cls}" ${c.fn?`style="cursor:pointer" onclick="${c.fn}"`:''}>
+    <div class="kpi-lbl">${c.label}</div><div class="kpi-val">${c.val}</div><div class="kpi-sub">${c.sub}</div>
+  </div>`).join('');
+  const footerEl=document.getElementById('dash-footer');
+  if(footerEl) footerEl.innerHTML=`&#127979; <strong>${fmtN(kpi.Model_Schools)||'—'} Model Schools</strong> &nbsp;|&nbsp; top performing schools across the state`;
 
-  // Year cards (ALL YEARS only)
+  // Year cards — always visible
   const yrEl=document.getElementById('ov-year-cards');
-  if(!yr){
-    const trend=D.enrollment_trend||[];
-    yrEl.innerHTML=trend.map((r,i)=>{
-      const prev=i>0?trend[i-1].total:null;
-      const chg=prev?((r.total-prev)/prev*100):null;
-      const chgHtml=chg!=null?`<div class="yc-chg ${chg>=0?'pos':'neg'}">${fmtG(chg)}</div>`:'<div class="yc-chg" style="color:#aaa">Base year</div>';
-      return `<div class="yr-card"><div class="yc-yr">${r.year}</div><div class="yc-val">${fmtN(r.total)}</div><div class="yc-sub">total enrollment</div>${chgHtml}</div>`;
-    }).join('');
-  } else {
-    yrEl.innerHTML='';
-  }
+  const trend=D.enrollment_trend||[];
+  yrEl.innerHTML=trend.filter(r=>r.year!=='2022-23').map((r,i,arr)=>{
+    const allTrend=D.enrollment_trend||[];
+    const globalIdx=allTrend.findIndex(x=>x.year===r.year);
+    const prev=globalIdx>0?allTrend[globalIdx-1].total:null;
+    const chg=prev?((r.total-prev)/prev*100):null;
+    const isSelected=r.year===displayYr;
+    const chgHtml=chg!=null?`<div class="yc-chg ${chg>=0?'pos':'neg'}">${fmtG(chg)}</div>`:'<div class="yc-chg" style="color:#aaa">Base year</div>';
+    return `<div class="yr-card" style="cursor:pointer;${isSelected?'border-top-color:var(--primary);box-shadow:0 4px 14px rgba(0,0,0,.14)':''}" onclick="document.getElementById('f-year').value='${r.year}';applyFilters()">
+      <div class="yc-yr">${r.year}</div><div class="yc-val">${fmtN(r.total)}</div><div class="yc-sub">total enrollment</div>${chgHtml}
+    </div>`;
+  }).join('');
 
-  // Main content
+  // Main content — always show full overview (year filter only updates KPI values)
   const main=document.getElementById('ov-main-content');
-  if(yr){
-    renderOverviewYear(main, schools, yr);
-  } else {
-    renderOverviewAll(main, schools, kpi, D);
-  }
+  renderOverviewAll(main, schools, kpi, D);
 }
 
 function renderOverviewAll(el, schools, kpi, D){
