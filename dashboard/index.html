@@ -830,7 +830,7 @@ function renderOverview(){
   // Year cards — always visible
   const yrEl=document.getElementById('ov-year-cards');
   const trend=D.enrollment_trend||[];
-  yrEl.innerHTML=trend.filter(r=>r.year!=='2022-23').map((r,i,arr)=>{
+  yrEl.innerHTML=trend.map((r,i,arr)=>{
     const allTrend=D.enrollment_trend||[];
     const globalIdx=allTrend.findIndex(x=>x.year===r.year);
     const prev=globalIdx>0?allTrend[globalIdx-1].total:null;
