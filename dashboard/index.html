@@ -229,14 +229,7 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
 <!-- TAB 2: DISTRICTS -->
 <div id="tab-districts" class="tpane">
   <div class="fbar" style="position:static;margin-bottom:14px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
-    <select id="f-year" onchange="applyFilters()">
-      <option value="">All Years</option>
-      <option value="2023-24">2023-24</option>
-      <option value="2024-25">2024-25</option>
-      <option value="2025-26" selected>2025-26</option>
-    </select>
     <select id="f-district" onchange="onDistrictChange()"><option value="">All Districts</option></select>
-    <select id="f-block" onchange="applyFilters()"><option value="">All Blocks</option></select>
     <button class="btn btn-outline" onclick="resetFilters()">&#8635; Reset</button>
   </div>
   <!-- District Detail Panel (shown when district selected) -->
@@ -249,8 +242,9 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
         </div>
         <button onclick="clearDistrictFilter()" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:.78rem;font-family:inherit">&#10005; Clear Filter</button>
       </div>
-      <div id="dd-kpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px"></div>
     </div>
+    <!-- 4 Year Cards -->
+    <div class="g4" id="dd-year-cards" style="margin-bottom:14px"></div>
     <div class="g2">
       <div class="card">
         <div class="card-title">Enrollment Trend — All 4 Years
@@ -760,17 +754,21 @@ function onDistrictChange(){
   applyFilters();
 }
 function applyFilters(){
-  window.activeFilters.district=document.getElementById('f-district').value;
-  window.activeFilters.block=document.getElementById('f-block').value;
-  window.activeFilters.year=document.getElementById('f-year').value;
+  const dEl=document.getElementById('f-district');
+  const bEl=document.getElementById('f-block');
+  const yEl=document.getElementById('f-year');
+  if(dEl) window.activeFilters.district=dEl.value;
+  if(bEl) window.activeFilters.block=bEl.value;
+  if(yEl) window.activeFilters.year=yEl.value;
   renderActiveTab();
 }
 function resetFilters(){
-  document.getElementById('f-district').value='';
-  document.getElementById('f-block').value='';
-  document.getElementById('f-year').value='';
-  const blockSel=document.getElementById('f-block');
-  if(blockSel) blockSel.innerHTML='<option value="">All Blocks</option>';
+  const dEl=document.getElementById('f-district');
+  const bEl=document.getElementById('f-block');
+  const yEl=document.getElementById('f-year');
+  if(dEl) dEl.value='';
+  if(bEl){bEl.value='';bEl.innerHTML='<option value="">All Blocks</option>';}
+  if(yEl) yEl.value='';
   window.activeFilters={district:'',block:'',schoolType:'',zone:'',year:''};
   renderActiveTab();
 }
@@ -1232,18 +1230,20 @@ function renderDistrictDetail(distName,D){
 
   // Header
   document.getElementById('dd-name').textContent=distName;
-  document.getElementById('dd-meta').innerHTML=`${distRow.Total_Schools||'—'} Schools &nbsp;|&nbsp; ${distRow.Red_Blocks||0} RED Blocks &nbsp;|&nbsp; Health: ${distRow.Health_Tag||'—'}`;
+  document.getElementById('dd-meta').innerHTML=`${distRow.Total_Schools||'—'} Schools &nbsp;|&nbsp; ${distRow.Red_Blocks||0} RED Blocks &nbsp;|&nbsp; Health: ${distRow.Health_Tag||'—'} &nbsp;|&nbsp; 4-Year Growth: <strong>${fmtP(g)}</strong>`;
 
-  // KPI boxes
-  document.getElementById('dd-kpis').innerHTML=[
-    {l:'Total Schools',v:fmtN(distRow.Total_Schools)},
-    {l:'Enrollment 2025-26',v:fmtN(distRow.Enroll_2526||distRow.Total_Enrollment_2526)},
-    {l:'4-Year Growth',v:fmtP(g)},
-    {l:'RED Zone Blocks',v:distRow.Red_Blocks||0},
-  ].map(c=>`<div style="background:rgba(255,255,255,.15);border-radius:8px;padding:10px 14px">
-    <div style="font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;opacity:.8;margin-bottom:2px">${c.l}</div>
-    <div style="font-size:1.25rem;font-weight:700">${c.v}</div>
-  </div>`).join('');
+  // 4 Year Cards (like home page)
+  const yrData=[
+    {year:'2022-23',total:parseFloat(distRow.Enroll_2223||distRow.Total_Enrollment_2223||0),prev:null},
+    {year:'2023-24',total:parseFloat(distRow.Enroll_2324||0),prev:parseFloat(distRow.Enroll_2223||distRow.Total_Enrollment_2223||0)},
+    {year:'2024-25',total:parseFloat(distRow.Enroll_2425||0),prev:parseFloat(distRow.Enroll_2324||0)},
+    {year:'2025-26',total:parseFloat(distRow.Enroll_2526||distRow.Total_Enrollment_2526||0),prev:parseFloat(distRow.Enroll_2425||0)},
+  ];
+  document.getElementById('dd-year-cards').innerHTML=yrData.map(r=>{
+    const chg=r.prev&&r.prev>0?((r.total-r.prev)/r.prev*100):null;
+    const chgHtml=chg!=null?`<div class="yc-chg ${chg>=0?'pos':'neg'}">${fmtG(chg)}</div>`:'<div class="yc-chg" style="color:#aaa">Base year</div>';
+    return `<div class="yr-card"><div class="yc-yr">${r.year}</div><div class="yc-val">${fmtN(r.total)}</div><div class="yc-sub">enrollment</div>${chgHtml}</div>`;
+  }).join('');
 
   // 4-year enrollment chart
   const yrEnroll=[
