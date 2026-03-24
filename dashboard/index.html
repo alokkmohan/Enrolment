@@ -476,9 +476,9 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
 <!-- TAB 4: SCHOOL FINDER -->
 <div id="tab-schools" class="tpane">
   <div class="card" style="margin-bottom:12px">
-    <div class="card-title" style="margin-bottom:10px">&#128269; UDISE Code se School Khoje</div>
+    <div class="card-title" style="margin-bottom:10px">&#128269; Search School by UDISE Code</div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <input type="text" id="udise-input" placeholder="UDISE Code dalein (e.g. 09140101601)" maxlength="11"
+      <input type="text" id="udise-input" placeholder="Enter UDISE Code (e.g. 09140101601)" maxlength="11"
         style="flex:1;min-width:200px;padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:.85rem;font-family:inherit;letter-spacing:1px"
         oninput="lookupUdise()"/>
       <button class="btn btn-outline" onclick="document.getElementById('udise-input').value='';document.getElementById('udise-result').style.display='none'">&#8635; Clear</button>
@@ -530,7 +530,7 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
 <!-- TAB 7: REPORT -->
 <div id="tab-report" class="tpane">
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-    <div style="font-size:.82rem;color:#666">&#128196; Sabhi reports yahan se download karein — Dashboard Reports (live data) aur Analysis Files (CSV/Excel)</div>
+    <div style="font-size:.82rem;color:#666">&#128196; Download all reports here — Dashboard Reports (live data) and Analysis Files (CSV/Excel)</div>
     <div style="display:flex;gap:6px">
       <button class="btn btn-success" onclick="dlXLReport()">&#11123; Full Dashboard Excel</button>
       <button class="btn btn-primary" onclick="window.print()">&#128424; Print</button>
@@ -541,16 +541,16 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
   <div class="rpt-level">
     <div class="rpt-lhdr" style="background:linear-gradient(135deg,#1565C0,#1976D2)">
       &#128202; State Level Reports
-      <span style="font-size:.75rem;font-weight:400;opacity:.85">Rajya star ki samagra jankari</span>
+      <span style="font-size:.75rem;font-weight:400;opacity:.85">Consolidated state-level overview</span>
     </div>
     <table class="rpt-ltbl">
-      <thead><tr><th class="rn">#</th><th>Report Ka Naam</th><th>Vivaran</th><th style="text-align:center">Count</th><th style="text-align:center">Download</th></tr></thead>
+      <thead><tr><th class="rn">#</th><th>Report Name</th><th>Description</th><th style="text-align:center">Count</th><th style="text-align:center">Download</th></tr></thead>
       <tbody>
-        <tr><td class="rn">1</td><td class="rname">State KPIs Summary</td><td class="rdesc">Kul schools, enrollment, growth, zone distribution</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L1_STATE/state_kpis.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">2</td><td class="rname">State Enrollment Trend (2022-26)</td><td class="rdesc">Char saalon ka year-wise enrollment</td><td style="text-align:center">4 Years</td><td style="text-align:center"><a href="../outputs/L1_STATE/state_enrollment_trend.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">3</td><td class="rname">School Type Enrollment Trend</td><td class="rdesc">School type ke anusaar enrollment trend</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L1_STATE/01b_schooltype_trend.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">4</td><td class="rname">Boys Enrollment Declining (Live)</td><td class="rdesc">Dashboard se — Boys enrollment declining schools</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-boys-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('boysDeclined')">&#11123; Excel</button></td></tr>
-        <tr><td class="rn">5</td><td class="rname">Girls Enrollment Declining (Live)</td><td class="rdesc">Dashboard se — Girls enrollment declining schools</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-girls-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('girlsDeclined')">&#11123; Excel</button></td></tr>
+        <tr><td class="rn">1</td><td class="rname">State KPIs Summary</td><td class="rdesc">Total schools, enrollment, growth, zone distribution</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L1_STATE/state_kpis.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">2</td><td class="rname">State Enrollment Trend (2022-26)</td><td class="rdesc">Year-wise enrollment across all 4 years</td><td style="text-align:center">4 Years</td><td style="text-align:center"><a href="../outputs/L1_STATE/state_enrollment_trend.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">3</td><td class="rname">School Type Enrollment Trend</td><td class="rdesc">Enrollment trend by school type across years</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L1_STATE/01b_schooltype_trend.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">4</td><td class="rname">Boys Enrollment Declining (Live)</td><td class="rdesc">Schools where boys enrollment declined — from dashboard data</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-boys-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('boysDeclined')">&#11123; Excel</button></td></tr>
+        <tr><td class="rn">5</td><td class="rname">Girls Enrollment Declining (Live)</td><td class="rdesc">Schools where girls enrollment declined — from dashboard data</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-girls-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('girlsDeclined')">&#11123; Excel</button></td></tr>
       </tbody>
     </table>
   </div>
@@ -559,20 +559,20 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
   <div class="rpt-level">
     <div class="rpt-lhdr" style="background:linear-gradient(135deg,#2E7D32,#388E3C)">
       &#128205; District Level Reports
-      <span style="font-size:.75rem;font-weight:400;opacity:.85">Jile star ki vishleshan</span>
+      <span style="font-size:.75rem;font-weight:400;opacity:.85">District-level enrollment analysis</span>
     </div>
     <table class="rpt-ltbl">
-      <thead><tr><th class="rn">#</th><th>Report Ka Naam</th><th>Vivaran</th><th style="text-align:center">Count</th><th style="text-align:center">Download</th></tr></thead>
+      <thead><tr><th class="rn">#</th><th>Report Name</th><th>Description</th><th style="text-align:center">Count</th><th style="text-align:center">Download</th></tr></thead>
       <tbody>
-        <tr><td class="rn">1</td><td class="rname">All Districts Summary (Live)</td><td class="rdesc">Sabhi jilon ka enrollment data dashboard se</td><td style="text-align:center"><span class="rcnt rcnt-info" id="rc-dist-all">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('allDists')">&#11123; Excel</button></td></tr>
-        <tr><td class="rn">2</td><td class="rname">Districts Where Enrollment Declined (Live)</td><td class="rdesc">Giraavat wale jile — 2025-26 vs 2024-25</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-dist-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('distDeclined')">&#11123; Excel</button></td></tr>
-        <tr><td class="rn">3</td><td class="rname">District Performance Summary</td><td class="rdesc">Growth rank, risk, potential scores</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L2_DISTRICT/07_district_performance.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">4</td><td class="rname">District Year-wise Summary</td><td class="rdesc">Pratyek jile ka year-wise vistar</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L2_DISTRICT/yearwise_district_summary.xlsx" download class="btn-dl">&#11123; Excel</a></td></tr>
-        <tr><td class="rn">5</td><td class="rname">District Growth Drivers</td><td class="rdesc">Kaunse karak vikas ko chal rahe hain</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L2_DISTRICT/11_district_growth_drivers.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">6</td><td class="rname">District Growth Potential</td><td class="rdesc">Sambhavna vishleshan</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L2_DISTRICT/13_district_potential.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">7</td><td class="rname">District Segmentation</td><td class="rdesc">Jila vargikaran / categories</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L2_DISTRICT/15_district_segment.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">8</td><td class="rname">District Peak Year Analysis</td><td class="rdesc">Har jile ka sabse achha enrollment saal</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L2_DISTRICT/17_district_peak.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">9</td><td class="rname">District Girls Ladder</td><td class="rdesc">Jilon mein ladkiyon ka enrollment vishleshan</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L2_DISTRICT/21_district_girls_ladder.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">1</td><td class="rname">All Districts Summary (Live)</td><td class="rdesc">Enrollment data for all districts — from dashboard</td><td style="text-align:center"><span class="rcnt rcnt-info" id="rc-dist-all">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('allDists')">&#11123; Excel</button></td></tr>
+        <tr><td class="rn">2</td><td class="rname">Districts Where Enrollment Declined (Live)</td><td class="rdesc">Districts with decline — 2025-26 vs 2024-25</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-dist-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('distDeclined')">&#11123; Excel</button></td></tr>
+        <tr><td class="rn">3</td><td class="rname">District Performance Summary</td><td class="rdesc">Growth rank, risk scores, potential analysis</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L2_DISTRICT/07_district_performance.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">4</td><td class="rname">District Year-wise Summary</td><td class="rdesc">Detailed year-wise enrollment per district</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L2_DISTRICT/yearwise_district_summary.xlsx" download class="btn-dl">&#11123; Excel</a></td></tr>
+        <tr><td class="rn">5</td><td class="rname">District Growth Drivers</td><td class="rdesc">Factors driving enrollment growth per district</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L2_DISTRICT/11_district_growth_drivers.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">6</td><td class="rname">District Growth Potential</td><td class="rdesc">Potential analysis for enrollment improvement</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L2_DISTRICT/13_district_potential.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">7</td><td class="rname">District Segmentation</td><td class="rdesc">District classification by performance categories</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L2_DISTRICT/15_district_segment.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">8</td><td class="rname">District Peak Year Analysis</td><td class="rdesc">Best enrollment year for each district</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L2_DISTRICT/17_district_peak.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">9</td><td class="rname">District Girls Ladder</td><td class="rdesc">Girls enrollment ladder analysis by district</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L2_DISTRICT/21_district_girls_ladder.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
       </tbody>
     </table>
   </div>
@@ -581,24 +581,24 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
   <div class="rpt-level">
     <div class="rpt-lhdr" style="background:linear-gradient(135deg,#E65100,#F57C00)">
       &#128204; Block Level Reports
-      <span style="font-size:.75rem;font-weight:400;opacity:.85">Block star ki jankari</span>
+      <span style="font-size:.75rem;font-weight:400;opacity:.85">Block-level enrollment data and analysis</span>
     </div>
     <table class="rpt-ltbl">
-      <thead><tr><th class="rn">#</th><th>Report Ka Naam</th><th>Vivaran</th><th style="text-align:center">Count</th><th style="text-align:center">Download</th></tr></thead>
+      <thead><tr><th class="rn">#</th><th>Report Name</th><th>Description</th><th style="text-align:center">Count</th><th style="text-align:center">Download</th></tr></thead>
       <tbody>
-        <tr><td class="rn">1</td><td class="rname">Block Health Summary (Live)</td><td class="rdesc">RED/ORANGE/GREEN zone — dashboard se</td><td style="text-align:center"><span class="rcnt rcnt-info" id="rc-blk-health">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('blockHealth')">&#11123; Excel</button></td></tr>
-        <tr><td class="rn">2</td><td class="rname">Blocks Where Enrollment Declined (Live)</td><td class="rdesc">RED + ORANGE zone blocks</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-blk-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('blocksDeclined')">&#11123; Excel</button></td></tr>
-        <tr><td class="rn">3</td><td class="rname">Block Health Data</td><td class="rdesc">Zone, growing/declining school counts</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/06_block_health.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">4</td><td class="rname">Block Cluster Patterns</td><td class="rdesc">Enrollment cluster ke anusar block vishleshan</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/10_cluster_pattern.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">5</td><td class="rname">Block Decline Reasons</td><td class="rdesc">Giraavat ke karan</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/12_block_decline_reasons.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">6</td><td class="rname">Block Segmentation</td><td class="rdesc">Block categories / segments</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/15_block_segment.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">7</td><td class="rname">Block Gender Dominance</td><td class="rdesc">Block mein boys/girls ratio dominance</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/16_block_gender_dominance.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">8</td><td class="rname">Block Small Schools Report</td><td class="rdesc">Choti schools wale blocks</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/19_block_small_schools.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">9</td><td class="rname">Block Girls Ladder</td><td class="rdesc">Blocks mein ladkiyon ka enrollment ladder</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/21_block_girls_ladder.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">1</td><td class="rname">Block Health Summary (Live)</td><td class="rdesc">RED / ORANGE / GREEN zone classification — from dashboard</td><td style="text-align:center"><span class="rcnt rcnt-info" id="rc-blk-health">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('blockHealth')">&#11123; Excel</button></td></tr>
+        <tr><td class="rn">2</td><td class="rname">Blocks Where Enrollment Declined (Live)</td><td class="rdesc">RED + ORANGE zone blocks — from dashboard</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-blk-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('blocksDeclined')">&#11123; Excel</button></td></tr>
+        <tr><td class="rn">3</td><td class="rname">Block Health Data</td><td class="rdesc">Zone, growing and declining school counts per block</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/06_block_health.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">4</td><td class="rname">Block Cluster Patterns</td><td class="rdesc">Block analysis by enrollment cluster similarity</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/10_cluster_pattern.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">5</td><td class="rname">Block Decline Reasons</td><td class="rdesc">Identified reasons for enrollment decline per block</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/12_block_decline_reasons.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">6</td><td class="rname">Block Segmentation</td><td class="rdesc">Block classification by performance categories</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/15_block_segment.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">7</td><td class="rname">Block Gender Dominance</td><td class="rdesc">Boys / Girls enrollment ratio dominance per block</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/16_block_gender_dominance.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">8</td><td class="rname">Block Small Schools Report</td><td class="rdesc">Blocks with high concentration of small schools</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/19_block_small_schools.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">9</td><td class="rname">Block Girls Ladder</td><td class="rdesc">Girls enrollment ladder ranking by block</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/21_block_girls_ladder.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
         <tr><td class="rn">10</td><td class="rname">Heatmap — Enrollment</td><td class="rdesc">Block-wise enrollment heatmap data</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/22_heatmap_enrollment.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">11</td><td class="rname">Heatmap — Gender</td><td class="rdesc">Block-wise gender heatmap</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/22_heatmap_gender.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">12</td><td class="rname">Heatmap — Risk</td><td class="rdesc">Block-wise risk heatmap</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/22_heatmap_risk.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">13</td><td class="rname">Heatmap — Transition</td><td class="rdesc">Block-wise transition heatmap</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/22_heatmap_transition.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">11</td><td class="rname">Heatmap — Gender</td><td class="rdesc">Block-wise gender distribution heatmap</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/22_heatmap_gender.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">12</td><td class="rname">Heatmap — Risk</td><td class="rdesc">Block-wise risk level heatmap</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/22_heatmap_risk.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">13</td><td class="rname">Heatmap — Transition</td><td class="rdesc">Block-wise enrollment transition heatmap</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/22_heatmap_transition.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
       </tbody>
     </table>
   </div>
@@ -607,31 +607,31 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
   <div class="rpt-level">
     <div class="rpt-lhdr" style="background:linear-gradient(135deg,#6A1B9A,#8E24AA)">
       &#127979; School Level Reports
-      <span style="font-size:.75rem;font-weight:400;opacity:.85">School star ki vistar jankari</span>
+      <span style="font-size:.75rem;font-weight:400;opacity:.85">School-level detailed reports and indices</span>
     </div>
     <table class="rpt-ltbl">
-      <thead><tr><th class="rn">#</th><th>Report Ka Naam</th><th>Vivaran</th><th style="text-align:center">Count</th><th style="text-align:center">Download</th></tr></thead>
+      <thead><tr><th class="rn">#</th><th>Report Name</th><th>Description</th><th style="text-align:center">Count</th><th style="text-align:center">Download</th></tr></thead>
       <tbody>
-        <tr><td class="rn">1</td><td class="rname">Schools Enrollment Declined — YoY (Live)</td><td class="rdesc">2025-26 vs 2024-25 me giraavat wali schools</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-sch-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('schoolsDeclined')">&#11123; Excel</button></td></tr>
-        <tr><td class="rn">2</td><td class="rname">Girls Enrollment Declined (Live)</td><td class="rdesc">Ladkiyon ka enrollment gira in schools mein</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-girls-decl2">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('girlsDeclined')">&#11123; Excel</button></td></tr>
-        <tr><td class="rn">3</td><td class="rname">Boys Enrollment Declined (Live)</td><td class="rdesc">Ladkon ka enrollment gira in schools mein</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-boys-decl2">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('boysDeclined')">&#11123; Excel</button></td></tr>
-        <tr><td class="rn">4</td><td class="rname">3 Lagatar Saal Declining Schools (Live)</td><td class="rdesc">2022-23 se 2025-26 tak har saal giraavat</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-3yr-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('threeYrDeclined')">&#11123; Excel</button></td></tr>
-        <tr><td class="rn">5</td><td class="rname">All Schools Master Data (Live)</td><td class="rdesc">Dashboard ki sabhi schools ka pura data</td><td style="text-align:center"><span class="rcnt rcnt-info" id="rc-sch-all">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('allSchools')">&#11123; Excel</button></td></tr>
-        <tr><td class="rn">6</td><td class="rname">School Growth / Decline Analysis</td><td class="rdesc">Har school ka growth/decline status</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/01_growth_decline.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">1</td><td class="rname">Schools Enrollment Declined — YoY (Live)</td><td class="rdesc">Schools with decline in 2025-26 vs 2024-25</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-sch-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('schoolsDeclined')">&#11123; Excel</button></td></tr>
+        <tr><td class="rn">2</td><td class="rname">Girls Enrollment Declined (Live)</td><td class="rdesc">Schools where girls enrollment has declined</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-girls-decl2">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('girlsDeclined')">&#11123; Excel</button></td></tr>
+        <tr><td class="rn">3</td><td class="rname">Boys Enrollment Declined (Live)</td><td class="rdesc">Schools where boys enrollment has declined</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-boys-decl2">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('boysDeclined')">&#11123; Excel</button></td></tr>
+        <tr><td class="rn">4</td><td class="rname">3 Consecutive Years Declining (Live)</td><td class="rdesc">Schools with continuous decline from 2022-23 to 2025-26</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-3yr-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('threeYrDeclined')">&#11123; Excel</button></td></tr>
+        <tr><td class="rn">5</td><td class="rname">All Schools Master Data (Live)</td><td class="rdesc">Complete data for all schools in the dashboard</td><td style="text-align:center"><span class="rcnt rcnt-info" id="rc-sch-all">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('allSchools')">&#11123; Excel</button></td></tr>
+        <tr><td class="rn">6</td><td class="rname">School Growth / Decline Analysis</td><td class="rdesc">Growth and decline status for each school</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/01_growth_decline.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
         <tr><td class="rn">7</td><td class="rname">School Stability Index</td><td class="rdesc">Enrollment stability score per school</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/02_stability_index.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">8</td><td class="rname">Gender Equity Index</td><td class="rdesc">Boys/Girls equity score</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/03_gender_equity.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">9</td><td class="rname">Continuity Index</td><td class="rdesc">School enrollment continuity</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/04_continuity_index.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">10</td><td class="rname">Dropout Proxy Analysis</td><td class="rdesc">Dropout ke sanket wali schools</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/05_dropout_proxy.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">11</td><td class="rname">School Risk Index</td><td class="rdesc">HIGH/MEDIUM/LOW risk score per school</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/08_school_risk_index.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">12</td><td class="rname">Early Warning Schools</td><td class="rdesc">Jo schools turant dhyan mangti hain</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/14_early_warning.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">13</td><td class="rname">School Cluster Analysis</td><td class="rdesc">Similar enrollment pattern wale clusters</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/10_school_cluster.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">14</td><td class="rname">Enrollment Potential</td><td class="rdesc">Schools ki enrollment badhane ki sambhavna</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/13_enrollment_potential.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">15</td><td class="rname">Recovery Index</td><td class="rdesc">Decline ke baad recovery wali schools</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/18_recovery_index.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">16</td><td class="rname">Small Schools Report</td><td class="rdesc">Bahut kam enrollment wali schools</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/19_small_school.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">17</td><td class="rname">Gender Dominance</td><td class="rdesc">Boys ya Girls dominant school list</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/16_gender_dominance.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">18</td><td class="rname">Peak Year Analysis</td><td class="rdesc">Har school ka sabse achha enrollment saal</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/17_peak_year.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">19</td><td class="rname">Girls Ladder (School-wise)</td><td class="rdesc">School star par ladkiyon ka enrollment ladder</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/21_girls_ladder.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr><td class="rn">20</td><td class="rname">Batch Indices (All School Indices)</td><td class="rdesc">Sabhi indices ek jagah — batch Excel</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/batch1_indices.xlsx" download class="btn-dl">&#11123; Excel</a></td></tr>
+        <tr><td class="rn">8</td><td class="rname">Gender Equity Index</td><td class="rdesc">Boys / Girls equity score per school</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/03_gender_equity.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">9</td><td class="rname">Continuity Index</td><td class="rdesc">Enrollment continuity score per school</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/04_continuity_index.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">10</td><td class="rname">Dropout Proxy Analysis</td><td class="rdesc">Schools showing indicators of potential dropout</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/05_dropout_proxy.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">11</td><td class="rname">School Risk Index</td><td class="rdesc">HIGH / MEDIUM / LOW risk score per school</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/08_school_risk_index.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">12</td><td class="rname">Early Warning Schools</td><td class="rdesc">Schools requiring immediate attention</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/14_early_warning.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">13</td><td class="rname">School Cluster Analysis</td><td class="rdesc">Schools grouped by similar enrollment patterns</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/10_school_cluster.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">14</td><td class="rname">Enrollment Potential</td><td class="rdesc">Potential for enrollment improvement per school</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/13_enrollment_potential.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">15</td><td class="rname">Recovery Index</td><td class="rdesc">Schools recovering after a period of decline</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/18_recovery_index.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">16</td><td class="rname">Small Schools Report</td><td class="rdesc">Schools with very low enrollment</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/19_small_school.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">17</td><td class="rname">Gender Dominance</td><td class="rdesc">Schools classified by boys or girls dominance</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/16_gender_dominance.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">18</td><td class="rname">Peak Year Analysis</td><td class="rdesc">Best enrollment year for each school</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/17_peak_year.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">19</td><td class="rname">Girls Ladder (School-wise)</td><td class="rdesc">Girls enrollment ladder ranking by school</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/21_girls_ladder.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr><td class="rn">20</td><td class="rname">Batch Indices (All School Indices)</td><td class="rdesc">All school indices combined in one Excel file</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/batch1_indices.xlsx" download class="btn-dl">&#11123; Excel</a></td></tr>
       </tbody>
     </table>
   </div>
@@ -1650,7 +1650,7 @@ function lookupUdise(){
   const s=(D.all_schools||[]).find(sc=>String(sc.school_id||sc.School_ID||'')===code||(sc.school_name||'').toLowerCase()===code.toLowerCase());
   if(!s){
     el.style.display='block';
-    el.innerHTML=`<div style="color:#C0392B;padding:10px">&#10060; UDISE Code "${code}" nahi mila. Code check karein.</div>`;
+    el.innerHTML=`<div style="color:#C0392B;padding:10px">&#10060; UDISE Code "${code}" not found. Please check the code and try again.</div>`;
     return;
   }
   // Compute girls/boys per year using ratio
@@ -1691,7 +1691,7 @@ function lookupUdise(){
 
   const flagHtml=[
     yoyDecl?`<span style="background:#C0392B;color:#fff;padding:3px 8px;border-radius:4px;font-size:.75rem;font-weight:700">&#9660; YoY Decline (2025-26 vs 2024-25)</span>`:'',
-    threeYrDecl?`<span style="background:#7B241C;color:#fff;padding:3px 8px;border-radius:4px;font-size:.75rem;font-weight:700">&#9888; 3 Lagatar Saal Decline</span>`:'',
+    threeYrDecl?`<span style="background:#7B241C;color:#fff;padding:3px 8px;border-radius:4px;font-size:.75rem;font-weight:700">&#9888; 3 Consecutive Years Decline</span>`:'',
     girlsDecl?`<span style="background:#AD1457;color:#fff;padding:3px 8px;border-radius:4px;font-size:.75rem;font-weight:700">&#128105; Girls Declining</span>`:'',
     boysDecl?`<span style="background:#1565C0;color:#fff;padding:3px 8px;border-radius:4px;font-size:.75rem;font-weight:700">&#128104; Boys Declining</span>`:'',
     !yoyDecl&&!threeYrDecl?`<span style="background:#27AE60;color:#fff;padding:3px 8px;border-radius:4px;font-size:.75rem;font-weight:700">&#9650; Growing / Stable</span>`:'',
@@ -1717,11 +1717,11 @@ function lookupUdise(){
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${flagHtml}</div>
       <table class="dt" style="width:100%;margin-bottom:0">
         <thead><tr>
-          <th>Saal</th>
+          <th>Year</th>
           <th style="text-align:right">Total Enrollment</th>
           <th style="text-align:right">&#128104; Boys</th>
           <th style="text-align:right">&#128105; Girls</th>
-          <th style="text-align:center">YoY Badlaav</th>
+          <th style="text-align:center">YoY Change</th>
         </tr></thead>
         <tbody>${yrRows}</tbody>
       </table>
@@ -2135,10 +2135,10 @@ function rptSec9(schools){
     <td style="text-align:right">${grwCell(totalPct.toFixed(2))}</td>
     <td>${riskBadge(s.Risk_Level)}</td>
   </tr>`;
-  }).join(''):`<tr><td colspan="11" style="text-align:center;padding:20px;color:#888">Koi school nahi mili jo lagatar teen saalon se decline ho rahi ho</td></tr>`;
+  }).join(''):`<tr><td colspan="11" style="text-align:center;padding:20px;color:#888">No schools found with 3 consecutive years of decline</td></tr>`;
   document.getElementById('rpt-s9').innerHTML=`
     ${rptSecHdr(9,'Schools With 3 Consecutive Years of Declining Enrollment',dlBtn("dlXLSec('threeYrDeclined')"))}
-    ${rptSummary(`<strong class="neg">${schools.length} schools</strong> me 2022-23 se 2025-26 tak lagatar har saal enrollment giri — yeh sabse zyada attention mangti hain &nbsp;|&nbsp; <em>Click row to open in School Finder</em>`)}
+    ${rptSummary(`<strong class="neg">${schools.length} schools</strong> with continuous enrollment decline every year from 2022-23 to 2025-26 — require immediate attention &nbsp;|&nbsp; <em>Click row to open in School Finder</em>`)}
     ${rptSearch('rpt-tbl9','Search school, district, block...')}
     <div style="max-height:450px;overflow:auto">
     <table class="dt" id="rpt-tbl9">
@@ -2202,7 +2202,7 @@ function dlXLSec(key){
   if(!window.XLSX){alert('SheetJS not loaded');return;}
   if(!window.rptData){renderReport();}
   const data=window.rptData[key];
-  if(!data||!data.length){alert('Data abhi load nahi hua, thodi der baad try karein');return;}
+  if(!data||!data.length){alert('No data found. Please open the Report tab first to load the data.');return;}
   dlXLData(data,key);
 }
 function dlXLReport(){
