@@ -528,28 +528,6 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
     <div class="tbl-ctrl"><span id="risk-info"></span><div class="pgbtns"><button class="pbtn" id="risk-prev" onclick="pg('risk',-1)">&#8592;</button><button class="pbtn" id="risk-next" onclick="pg('risk',1)">&#8594;</button></div></div>
   </div>
   <div class="card">
-    <div class="card-title">Schools Where Enrollment Has Declined
-      <button class="btn btn-success" onclick="dlXL('decline-data','declining_schools')">&#11123; Download Excel</button>
-    </div>
-    <div class="tbl-wrap">
-      <table class="dt" id="decline-tbl">
-        <thead><tr>
-          <th onclick="sortTbl('decline-tbl',0,'str')">School</th>
-          <th onclick="sortTbl('decline-tbl',1,'str')">District</th>
-          <th onclick="sortTbl('decline-tbl',2,'str')">Block</th>
-          <th onclick="sortTbl('decline-tbl',3,'str')">Type</th>
-          <th onclick="sortTbl('decline-tbl',4,'num')">Enroll 2022-23</th>
-          <th onclick="sortTbl('decline-tbl',5,'num')">Enroll 2025-26</th>
-          <th onclick="sortTbl('decline-tbl',6,'num')">Decline%</th>
-          <th onclick="sortTbl('decline-tbl',7,'str')">Trend</th>
-          <th onclick="sortTbl('decline-tbl',8,'str')">Risk</th>
-        </tr></thead>
-        <tbody id="decline-tbody"></tbody>
-      </table>
-    </div>
-    <div class="tbl-ctrl"><span id="decline-info"></span><div class="pgbtns"><button class="pbtn" id="decline-prev" onclick="pg('decline',-1)">&#8592;</button><button class="pbtn" id="decline-next" onclick="pg('decline',1)">&#8594;</button></div></div>
-  </div>
-  <div class="card">
     <div class="card-title">Critical Alerts</div>
     <div class="tbl-wrap">
       <table class="dt" id="alert-tbl">
@@ -573,6 +551,7 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
     <a onclick="rptScroll('rpt-s6',this)">&#128105; Girls&#8595;</a>
     <a onclick="rptScroll('rpt-s7',this)">&#128104; Boys&#8595;</a>
     <a onclick="rptScroll('rpt-s8',this)">&#128205; Block Health</a>
+    <a onclick="rptScroll('rpt-s9',this)">&#9889; 3yr Decline</a>
     <button class="btn btn-success" style="font-size:.72rem;padding:4px 10px;margin-left:6px" onclick="dlXLReport()">&#11123; Full Excel</button>
     <button class="btn btn-primary" style="font-size:.72rem;padding:4px 10px" onclick="window.print()">&#128424; Print</button>
   </nav>
@@ -584,6 +563,7 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
   <div id="rpt-s6" class="rpt-sec"></div>
   <div id="rpt-s7" class="rpt-sec"></div>
   <div id="rpt-s8" class="rpt-sec"></div>
+  <div id="rpt-s9" class="rpt-sec"></div>
 </div>
 
 </div><!-- /app -->
@@ -1664,27 +1644,6 @@ function renderRisk(){
   });
   window.pgRender['risk']();
 
-  // Decline table
-  const declined=schools.filter(s=>parseFloat(s.Overall_Growth_pct||0)<0)
-    .sort((a,b)=>parseFloat(a.Overall_Growth_pct||0)-parseFloat(b.Overall_Growth_pct||0));
-  window.xlData['decline-data']=declined;
-  initPg('decline',declined,25,()=>{
-    const {rows}=pgRows('decline');
-    document.getElementById('decline-tbody').innerHTML=rows.map(s=>`<tr>
-      <td style="cursor:pointer" onclick="showModal('${s.school_id||s.School_ID||''}')">${s.school_name||'—'}</td>
-      <td>${s.district||s.District||'—'}</td>
-      <td>${s.block||s.Block||'—'}</td>
-      <td>${s.School_Type||'—'}</td>
-      <td style="text-align:right">${fmtN(s.Enroll_2223)}</td>
-      <td style="text-align:right">${fmtN(s.Enroll_2526)}</td>
-      <td style="text-align:right"><span class="neg">${fmtP(s.Overall_Growth_pct)}</span></td>
-      <td>${s.Trend_Tag||'—'}</td>
-      <td>${riskBadge(s.Risk_Level)}</td>
-    </tr>`).join('');
-    pgCtrl('decline','decline-info','decline-prev','decline-next');
-  });
-  window.pgRender['decline']();
-
   // Critical alerts
   const alerts=(D.early_warnings||[]).filter(a=>(a.Alert_Severity||'').toUpperCase()==='CRITICAL');
   initPg('alert',alerts,25,()=>{
@@ -1923,27 +1882,28 @@ function rptSec4(blocksDeclined,hmMap,redBlocks,orangeBlocks){
     </table></div>`;
 }
 
-// ── Section 5: Schools Declined ──────────────────────────────
+// ── Section 5: Schools Declined (2025-26 vs 2024-25) ─────────
 function rptSec5(schoolsDeclined,girlsAlsoDeclined){
-  const rows=schoolsDeclined.map(s=>`<tr style="cursor:pointer" onclick="goToSchool('${(s.school_name||'').replace(/'/g,'')}')">
+  const rows=schoolsDeclined.map(s=>{
+    const e2425=parseFloat(s.Enroll_2425||0);
+    const e2526=parseFloat(s.Enroll_2526||0);
+    const yoy=e2425>0?((e2526-e2425)/e2425*100):null;
+    return `<tr style="cursor:pointer" onclick="goToSchool('${(s.school_name||'').replace(/'/g,'')}')">
     <td>${s.district||s.District||'—'}</td>
     <td>${s.block||s.Block||'—'}</td>
     <td><strong>${s.school_name||'—'}</strong></td>
     <td>${s.School_Type||'—'}</td>
-    <td style="text-align:right">${fmtN(s.Enroll_2223)}</td>
-    <td style="text-align:right">${fmtN(s.Enroll_2324)}</td>
-    <td style="text-align:right">${fmtN(s.Enroll_2425)}</td>
-    <td style="text-align:right">${fmtN(s.Enroll_2526)}</td>
-    <td style="text-align:right">${grwCell(s.Overall_Growth_pct)}</td>
+    <td style="text-align:right">${fmtN(e2425)}</td>
+    <td style="text-align:right">${fmtN(e2526)}</td>
+    <td style="text-align:right">${yoy!==null?grwCell(yoy.toFixed(2)):'—'}</td>
     <td style="text-align:right">${grwCell(s.Girls_Growth_pct)}</td>
     <td style="text-align:right">${grwCell(s.Boys_Growth_pct)}</td>
-    <td style="text-align:center">${s.Girls_Declining_Flag==='Yes'?'<span class="badge" style="background:#e91e63;color:#fff">Yes</span>':'—'}</td>
-    <td style="text-align:center">${parseFloat(s.Boys_Growth_pct||0)<0?'<span class="badge" style="background:#2196F3;color:#fff">Yes</span>':'—'}</td>
     <td>${riskBadge(s.Risk_Level)}</td>
-  </tr>`).join('');
+  </tr>`;
+  }).join('');
   document.getElementById('rpt-s5').innerHTML=`
-    ${rptSecHdr(5,'Schools Where Enrollment Declined',dlBtn("dlXLSec('schoolsDeclined')"))}
-    ${rptSummary(`<strong class="neg">${schoolsDeclined.length} schools declined</strong> &nbsp;|&nbsp; Girls also declining: <strong class="neg">${girlsAlsoDeclined}</strong> &nbsp;|&nbsp; <em>Click row to open in School Finder</em>`)}
+    ${rptSecHdr(5,'Schools Where Enrollment Declined (2025-26 vs 2024-25)',dlBtn("dlXLSec('schoolsDeclined')"))}
+    ${rptSummary(`<strong class="neg">${schoolsDeclined.length} schools</strong> me 2025-26 me 2024-25 se giravat &nbsp;|&nbsp; Girls bhi declining: <strong class="neg">${girlsAlsoDeclined}</strong> &nbsp;|&nbsp; <em>Click row to open in School Finder</em>`)}
     ${rptSearch('rpt-tbl5','Search school, district, block...')}
     <div style="max-height:450px;overflow:auto">
     <table class="dt" id="rpt-tbl5">
@@ -1952,15 +1912,11 @@ function rptSec5(schoolsDeclined,girlsAlsoDeclined){
         <th onclick="sortTbl('rpt-tbl5',1,'str')">Block</th>
         <th onclick="sortTbl('rpt-tbl5',2,'str')">School Name</th>
         <th onclick="sortTbl('rpt-tbl5',3,'str')">Type</th>
-        <th onclick="sortTbl('rpt-tbl5',4,'num')">2022-23</th>
-        <th onclick="sortTbl('rpt-tbl5',5,'num')">2023-24</th>
-        <th onclick="sortTbl('rpt-tbl5',6,'num')">2024-25</th>
-        <th onclick="sortTbl('rpt-tbl5',7,'num')">2025-26</th>
-        <th onclick="sortTbl('rpt-tbl5',8,'num')">Overall%</th>
-        <th onclick="sortTbl('rpt-tbl5',9,'num')">Girls%</th>
-        <th onclick="sortTbl('rpt-tbl5',10,'num')">Boys%</th>
-        <th>Girls&#8595;</th>
-        <th>Boys&#8595;</th>
+        <th onclick="sortTbl('rpt-tbl5',4,'num')">Enroll 2024-25</th>
+        <th onclick="sortTbl('rpt-tbl5',5,'num')">Enroll 2025-26</th>
+        <th onclick="sortTbl('rpt-tbl5',6,'num')">YoY Change%</th>
+        <th onclick="sortTbl('rpt-tbl5',7,'num')">Girls%</th>
+        <th onclick="sortTbl('rpt-tbl5',8,'num')">Boys%</th>
         <th>Risk</th>
       </tr></thead>
       <tbody>${rows}</tbody>
@@ -2092,6 +2048,52 @@ function rptSec8(bh){
     </table></div>`;
 }
 
+// ── Section 9: 3 Consecutive Years Declining ─────────────────
+function rptSec9(schools){
+  const rows=schools.length?schools.map(s=>{
+    const e2223=parseFloat(s.Enroll_2223||0);
+    const e2324=parseFloat(s.Enroll_2324||0);
+    const e2425=parseFloat(s.Enroll_2425||0);
+    const e2526=parseFloat(s.Enroll_2526||0);
+    const totalLoss=e2223-e2526;
+    const totalPct=e2223>0?((e2526-e2223)/e2223*100):0;
+    return `<tr style="background:#fff5f5;cursor:pointer" onclick="goToSchool('${(s.school_name||'').replace(/'/g,'')}')">
+    <td>${s.district||s.District||'—'}</td>
+    <td>${s.block||s.Block||'—'}</td>
+    <td><strong>${s.school_name||'—'}</strong></td>
+    <td>${s.School_Type||'—'}</td>
+    <td style="text-align:right">${fmtN(e2223)}</td>
+    <td style="text-align:right">${fmtN(e2324)}</td>
+    <td style="text-align:right">${fmtN(e2425)}</td>
+    <td style="text-align:right">${fmtN(e2526)}</td>
+    <td style="text-align:right"><span class="neg">&#9660;${fmtN(totalLoss)}</span></td>
+    <td style="text-align:right">${grwCell(totalPct.toFixed(2))}</td>
+    <td>${riskBadge(s.Risk_Level)}</td>
+  </tr>`;
+  }).join(''):`<tr><td colspan="11" style="text-align:center;padding:20px;color:#888">Koi school nahi mili jo lagatar teen saalon se decline ho rahi ho</td></tr>`;
+  document.getElementById('rpt-s9').innerHTML=`
+    ${rptSecHdr(9,'Schools With 3 Consecutive Years of Declining Enrollment',dlBtn("dlXLSec('threeYrDeclined')"))}
+    ${rptSummary(`<strong class="neg">${schools.length} schools</strong> me 2022-23 se 2025-26 tak lagatar har saal enrollment giri — yeh sabse zyada attention mangti hain &nbsp;|&nbsp; <em>Click row to open in School Finder</em>`)}
+    ${rptSearch('rpt-tbl9','Search school, district, block...')}
+    <div style="max-height:450px;overflow:auto">
+    <table class="dt" id="rpt-tbl9">
+      <thead><tr>
+        <th onclick="sortTbl('rpt-tbl9',0,'str')">District</th>
+        <th onclick="sortTbl('rpt-tbl9',1,'str')">Block</th>
+        <th onclick="sortTbl('rpt-tbl9',2,'str')">School Name</th>
+        <th onclick="sortTbl('rpt-tbl9',3,'str')">Type</th>
+        <th onclick="sortTbl('rpt-tbl9',4,'num')">2022-23</th>
+        <th onclick="sortTbl('rpt-tbl9',5,'num')">2023-24</th>
+        <th onclick="sortTbl('rpt-tbl9',6,'num')">2024-25</th>
+        <th onclick="sortTbl('rpt-tbl9',7,'num')">2025-26</th>
+        <th onclick="sortTbl('rpt-tbl9',8,'num')">Total Loss</th>
+        <th onclick="sortTbl('rpt-tbl9',9,'num')">Overall%</th>
+        <th>Risk</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
 // ── MAIN renderReport ────────────────────────────────────────
 function renderReport(){
   const D=window.dashboardData;
@@ -2125,9 +2127,14 @@ function renderReport(){
   const blocksDeclined=[...bh]
     .filter(b=>b.Block_Zone==='RED'||b.Block_Zone==='ORANGE')
     .sort((a,b)=>parseFloat(a.Avg_Growth_pct||0)-parseFloat(b.Avg_Growth_pct||0));
+  // schoolsDeclined: 2025-26 vs 2024-25 (YoY comparison)
   const schoolsDeclined=[...allSchools]
-    .filter(s=>parseFloat(s.Overall_Growth_pct||0)<0)
-    .sort((a,b)=>parseFloat(a.Overall_Growth_pct||0)-parseFloat(b.Overall_Growth_pct||0));
+    .filter(s=>parseFloat(s.Enroll_2526||0)<parseFloat(s.Enroll_2425||0)&&parseFloat(s.Enroll_2425||0)>0)
+    .sort((a,b)=>{
+      const yA=(parseFloat(a.Enroll_2526||0)-parseFloat(a.Enroll_2425||0))/parseFloat(a.Enroll_2425||1)*100;
+      const yB=(parseFloat(b.Enroll_2526||0)-parseFloat(b.Enroll_2425||0))/parseFloat(b.Enroll_2425||1)*100;
+      return yA-yB;
+    });
   const girlsDeclined=[...glArr]
     .filter(s=>s.Girls_Declining_Flag==='Yes'||parseFloat(s.Girls_Growth_Pct||s.Girls_Growth_pct||0)<0)
     .sort((a,b)=>parseFloat(a.Girls_Growth_Pct||a.Girls_Growth_pct||0)-parseFloat(b.Girls_Growth_Pct||b.Girls_Growth_pct||0));
@@ -2148,6 +2155,17 @@ function renderReport(){
   const orangeBlocks=bh.filter(b=>b.Block_Zone==='ORANGE').length;
   const girlsAlsoDeclined=schoolsDeclined.filter(s=>parseFloat(s.Girls_Growth_pct||0)<0).length;
 
+  // 3 consecutive years declining: each year < previous year
+  const threeYrDeclined=[...allSchools].filter(s=>{
+    const e2223=parseFloat(s.Enroll_2223||0);
+    const e2324=parseFloat(s.Enroll_2324||0);
+    const e2425=parseFloat(s.Enroll_2425||0);
+    const e2526=parseFloat(s.Enroll_2526||0);
+    return e2223>0&&e2324>0&&e2425>0&&e2526>0
+      &&e2324<e2223&&e2425<e2324&&e2526<e2425;
+  }).sort((a,b)=>parseFloat(a.Enroll_2526||0)-parseFloat(b.Enroll_2526||0));
+  window.rptData.threeYrDeclined=threeYrDeclined;
+
   rptSec1(kpi,m,trend);
   rptSec2(allDists,distGrowing,distDeclined.length);
   rptSec3(distDeclined,totalLoss);
@@ -2157,6 +2175,7 @@ function renderReport(){
   rptSec7(boysDeclined);
   rptSec8(bh);
   window.rptData.blockHealth=bh;
+  rptSec9(threeYrDeclined);
 }
 
 // ── Excel downloads ──────────────────────────────────────────
@@ -2178,6 +2197,7 @@ function dlXLReport(){
   add(rd.schoolsDeclined,'Schools Declined');
   add(rd.girlsDeclined,'Girls Declined');
   add(rd.boysDeclined,'Boys Declined');
+  add(rd.threeYrDeclined,'3yr Consecutive Decline');
   XLSX.writeFile(wb,'enrollment_full_report.xlsx');
 }
 
