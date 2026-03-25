@@ -1192,20 +1192,21 @@ function renderOverviewAll(el, schools, kpi, D){
     </div>`;
   }).join('');
 
-  // ── Class Transition Rate Chart ──
+  // ── Class Transition Rate Chart (YoY comparison) ──
   mkChart('c-transition',{type:'bar',data:{
-    labels:['2022-23','2023-24','2024-25','2025-26'],
+    labels:['Class 10→11'],
     datasets:[
-      {label:'Class 10→11 Retention %',data:[50.7,63.5,66.6,59.3],
-        backgroundColor:['rgba(244,67,54,.8)','rgba(255,152,0,.8)','rgba(76,175,80,.85)','rgba(33,150,243,.85)'],
-        borderRadius:5}
+      {label:'2024-25',data:[66.6],backgroundColor:'rgba(255,152,0,.85)',borderRadius:5,barPercentage:.4},
+      {label:'2025-26',data:[59.3],backgroundColor:'rgba(33,150,243,.85)',borderRadius:5,barPercentage:.4}
     ]
   },options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false},
-      tooltip:{callbacks:{label:c=>` Retention: ${c.raw}% of Class 10 students continued to Class 11`}}},
+    plugins:{
+      legend:{position:'bottom',labels:{font:{size:10},boxWidth:12,padding:8}},
+      tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.raw}% retention`}}
+    },
     scales:{
       y:{min:0,max:100,ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:'#f0f4f8'},title:{display:true,text:'Retention %',font:{size:9}}},
-      x:{ticks:{font:{size:10}},grid:{display:false}}
+      x:{ticks:{font:{size:11}},grid:{display:false}}
     }
   }});
 
