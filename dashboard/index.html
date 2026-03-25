@@ -1056,10 +1056,20 @@ function renderOverviewAll(el, schools, kpi, D){
       <div class="card-title">Enrollment by School Type</div>
       <div id="stype-ov-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding-top:4px"></div>
       <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
-        <div style="font-size:.75rem;font-weight:700;color:var(--primary);margin-bottom:10px">Class Transition Rate — 10&#8594;11 &amp; 11&#8594;12 (Year-wise Average %)
-          <span style="font-size:.68rem;font-weight:400;color:var(--text-muted);margin-left:8px">% of Class 10 students continuing to Class 11/12</span>
+        <div style="display:flex;gap:12px;align-items:stretch;flex-wrap:wrap">
+          <!-- Class 8→9 Intake Card -->
+          <div style="background:#f0f7ff;border-radius:10px;padding:14px 18px;min-width:180px;border-left:4px solid var(--secondary);flex-shrink:0">
+            <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px">Class 8 &#8594; 9 Net Intake</div>
+            <div style="font-size:1.6rem;font-weight:700;color:var(--secondary);line-height:1">570%</div>
+            <div style="font-size:.68rem;color:var(--text-muted);margin-top:4px">Avg ratio: Class 9 enrollment vs Class 8</div>
+            <div style="font-size:.7rem;color:#555;margin-top:6px;line-height:1.5">Private school students join Govt schools at Class 9 — 5.7x intake vs own Class 8</div>
+          </div>
+          <!-- 10→11 Trend Chart -->
+          <div style="flex:1;min-width:260px">
+            <div style="font-size:.72rem;font-weight:700;color:var(--primary);margin-bottom:8px">Class 10&#8594;11 Transition Rate — Year-wise Average %</div>
+            <div class="ch-wrap" style="height:160px"><canvas id="c-transition"></canvas></div>
+          </div>
         </div>
-        <div class="ch-wrap" style="height:200px"><canvas id="c-transition"></canvas></div>
       </div>
     </div>
 
@@ -1192,21 +1202,23 @@ function renderOverviewAll(el, schools, kpi, D){
     </div>`;
   }).join('');
 
-  // ── Class Transition Rate Chart (YoY comparison) ──
+  // ── Class Transition Rate Chart (4-year) ──
   mkChart('c-transition',{type:'bar',data:{
-    labels:['Class 10→11'],
-    datasets:[
-      {label:'2024-25',data:[66.6],backgroundColor:'rgba(255,152,0,.85)',borderRadius:5,barPercentage:.4},
-      {label:'2025-26',data:[59.3],backgroundColor:'rgba(33,150,243,.85)',borderRadius:5,barPercentage:.4}
-    ]
+    labels:['2022-23','2023-24','2024-25','2025-26'],
+    datasets:[{
+      label:'Class 10→11 Retention %',
+      data:[50.7,63.5,66.6,59.3],
+      backgroundColor:['rgba(244,67,54,.8)','rgba(255,152,0,.8)','rgba(76,175,80,.85)','rgba(33,150,243,.85)'],
+      borderRadius:5
+    }]
   },options:{responsive:true,maintainAspectRatio:false,
     plugins:{
-      legend:{position:'bottom',labels:{font:{size:10},boxWidth:12,padding:8}},
-      tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.raw}% retention`}}
+      legend:{display:false},
+      tooltip:{callbacks:{label:c=>` ${c.raw}% of Class 10 students continued to Class 11`}}
     },
     scales:{
       y:{min:0,max:100,ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:'#f0f4f8'},title:{display:true,text:'Retention %',font:{size:9}}},
-      x:{ticks:{font:{size:11}},grid:{display:false}}
+      x:{ticks:{font:{size:10}},grid:{display:false}}
     }
   }});
 
