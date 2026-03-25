@@ -635,6 +635,54 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
       </tbody>
     </table>
   </div>
+
+  <!-- SECTION 5: CATEGORY-WISE TREND REPORTS -->
+  <div class="rpt-level">
+    <div class="rpt-lhdr" style="background:linear-gradient(135deg,#00695C,#00897B)">
+      &#128200; Category-wise Enrollment Trend Reports
+      <span style="font-size:.75rem;font-weight:400;opacity:.85">MOI / Minority / BPL / Social Category — Secondary schools matched to dashboard master</span>
+    </div>
+    <table class="rpt-ltbl">
+      <thead><tr><th class="rn">#</th><th>Report Name</th><th>Description</th><th style="text-align:center">Sheets</th><th style="text-align:center">Download</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="rn">1</td>
+          <td class="rname">Medium of Instruction (MOI) Trend</td>
+          <td class="rdesc">District-wise enrollment by language medium (Hindi, English, Urdu etc.) — 4-year trend with YoY arrow and % change</td>
+          <td style="text-align:center"><span class="rcnt rcnt-info">3</span></td>
+          <td style="text-align:center"><a href="../reports/01_MOI_Medium_of_Instruction_Trend.xlsx" download class="btn-dl">&#11123; Excel</a></td>
+        </tr>
+        <tr>
+          <td class="rn">2</td>
+          <td class="rname">Minority Wise Enrollment Trend</td>
+          <td class="rdesc">Muslim student enrollment trend by district — 4 years with growth direction and % change vs 2022-23</td>
+          <td style="text-align:center"><span class="rcnt rcnt-info">3</span></td>
+          <td style="text-align:center"><a href="../reports/02_Minority_Wise_Enrollment_Trend.xlsx" download class="btn-dl">&#11123; Excel</a></td>
+        </tr>
+        <tr>
+          <td class="rn">3</td>
+          <td class="rname">BPL Enrollment Trend</td>
+          <td class="rdesc">BPL students enrolled district-wise across 4 years — state total grew +68.6% (1.92L → 3.25L)</td>
+          <td style="text-align:center"><span class="rcnt rcnt-info">1</span></td>
+          <td style="text-align:center"><a href="../reports/03_BPL_Enrollment_Trend.xlsx" download class="btn-dl">&#11123; Excel</a></td>
+        </tr>
+        <tr>
+          <td class="rn">4</td>
+          <td class="rname">Social Category Enrollment Trend</td>
+          <td class="rdesc">SC / ST / OBC / General breakdown by district — 4-year trend. OBC highest at 3.73L; ST declining -10.1%</td>
+          <td style="text-align:center"><span class="rcnt rcnt-info">5</span></td>
+          <td style="text-align:center"><a href="../reports/04_Social_Category_Enrollment_Trend.xlsx" download class="btn-dl">&#11123; Excel</a></td>
+        </tr>
+        <tr>
+          <td class="rn">5</td>
+          <td class="rname">BPL by Social Category Trend</td>
+          <td class="rdesc">BPL enrollment split by SC / ST / OBC / General — district-wise, 2023-24 to 2025-26</td>
+          <td style="text-align:center"><span class="rcnt rcnt-info">2</span></td>
+          <td style="text-align:center"><a href="../reports/05_BPL_Social_Category_Trend.xlsx" download class="btn-dl">&#11123; Excel</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 </div><!-- /app -->
@@ -1026,6 +1074,55 @@ function renderOverviewAll(el, schools, kpi, D){
       <div id="stype-ov-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding-top:4px"></div>
     </div>
 
+    <!-- S5: Category-wise Enrollment Trends -->
+    <div class="card" style="margin-top:14px">
+      <div class="card-title" style="margin-bottom:14px">Category-wise Enrollment Trends — Secondary Schools (2022-26)
+        <span style="font-size:.68rem;font-weight:400;color:var(--text-muted)">Source: MOI / Minority / BPL / Social Category files</span>
+      </div>
+      <div class="g4" style="margin-bottom:16px">
+        <div class="kpi primary">
+          <div class="kpi-lbl">Hindi Medium (2025-26)</div>
+          <div class="kpi-val" style="font-size:1.15rem">6,61,776</div>
+          <div class="kpi-sub">&#9650; +5.8% from 2022-23</div>
+        </div>
+        <div class="kpi success">
+          <div class="kpi-lbl">Muslim Minority (2025-26)</div>
+          <div class="kpi-val" style="font-size:1.15rem">1,02,666</div>
+          <div class="kpi-sub">&#9650; +6.7% from 2022-23</div>
+        </div>
+        <div class="kpi warning">
+          <div class="kpi-lbl">BPL Students (2025-26)</div>
+          <div class="kpi-val" style="font-size:1.15rem">3,24,707</div>
+          <div class="kpi-sub">&#9650; +68.6% from 2022-23</div>
+        </div>
+        <div class="kpi secondary">
+          <div class="kpi-lbl">OBC Students (2025-26)</div>
+          <div class="kpi-val" style="font-size:1.15rem">3,72,717</div>
+          <div class="kpi-sub">&#9650; +4.9% from 2022-23</div>
+        </div>
+      </div>
+      <div class="g2" style="margin-bottom:14px">
+        <div>
+          <div style="font-size:.72rem;font-weight:700;color:var(--primary);margin-bottom:8px">BPL Enrollment Trend</div>
+          <div class="ch-wrap" style="height:200px"><canvas id="c-cat-bpl"></canvas></div>
+        </div>
+        <div>
+          <div style="font-size:.72rem;font-weight:700;color:var(--primary);margin-bottom:8px">Social Category Breakdown</div>
+          <div class="ch-wrap" style="height:200px"><canvas id="c-cat-social"></canvas></div>
+        </div>
+      </div>
+      <div class="g2">
+        <div>
+          <div style="font-size:.72rem;font-weight:700;color:var(--primary);margin-bottom:8px">MOI — Hindi vs Non-Hindi</div>
+          <div class="ch-wrap" style="height:200px"><canvas id="c-cat-moi"></canvas></div>
+        </div>
+        <div>
+          <div style="font-size:.72rem;font-weight:700;color:var(--primary);margin-bottom:8px">Muslim Minority Trend</div>
+          <div class="ch-wrap" style="height:200px"><canvas id="c-cat-muslim"></canvas></div>
+        </div>
+      </div>
+    </div>
+
     `;
 
   // ── Trend chart ──
@@ -1130,6 +1227,55 @@ function renderOverviewAll(el, schools, kpi, D){
       <div style="background:#eee;border-radius:4px;height:7px"><div style="width:${Math.min(dclPct,100)}%;background:#C0392B;height:7px;border-radius:4px"></div></div>
     </div>`;
   }).join('');
+
+  // ── Category Trend Charts ──
+  const catYrs=['2022-23','2023-24','2024-25','2025-26'];
+
+  mkChart('c-cat-bpl',{type:'line',data:{
+    labels:catYrs,
+    datasets:[{label:'BPL Students',data:[192541,227205,281040,324707],
+      borderColor:'#FF9800',backgroundColor:'rgba(255,152,0,.13)',
+      borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#FF9800',fill:true,tension:.3}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.raw)}}},
+    scales:{y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K',font:{size:9}},grid:{color:'#f0f4f8'}},x:{ticks:{font:{size:10}},grid:{display:false}}}
+  }});
+
+  mkChart('c-cat-social',{type:'bar',data:{
+    labels:catYrs,
+    datasets:[
+      {label:'OBC', data:[355450,352462,365233,372717],backgroundColor:'rgba(33,150,243,.85)',borderRadius:3},
+      {label:'SC',  data:[175505,175766,184459,192648],backgroundColor:'rgba(76,175,80,.85)',borderRadius:3},
+      {label:'General',data:[99123,94161,94196,91424],backgroundColor:'rgba(156,39,176,.8)',borderRadius:3},
+      {label:'ST',  data:[9487,8848,8216,8530],backgroundColor:'rgba(244,67,54,.8)',borderRadius:3}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10,padding:6}},
+      tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmtN(c.raw)}`}}},
+    scales:{x:{stacked:true,ticks:{font:{size:10}},grid:{display:false}},y:{stacked:true,ticks:{callback:v=>(v/1000).toFixed(0)+'K',font:{size:9}},grid:{color:'#f0f4f8'}}}
+  }});
+
+  mkChart('c-cat-moi',{type:'bar',data:{
+    labels:catYrs,
+    datasets:[
+      {label:'Hindi',     data:[625208,618764,640900,661776],backgroundColor:'rgba(33,150,243,.85)',borderRadius:3},
+      {label:'Non-Hindi', data:[14278,12473,11204,12211],backgroundColor:'rgba(244,67,54,.8)',borderRadius:3}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10,padding:6}},
+      tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmtN(c.raw)}`}}},
+    scales:{x:{stacked:true,ticks:{font:{size:10}},grid:{display:false}},y:{stacked:true,ticks:{callback:v=>(v/1000).toFixed(0)+'K',font:{size:9}},grid:{color:'#f0f4f8'}}}
+  }});
+
+  mkChart('c-cat-muslim',{type:'line',data:{
+    labels:catYrs,
+    datasets:[{label:'Muslim Students',data:[96227,95955,100572,102666],
+      borderColor:'#4CAF50',backgroundColor:'rgba(76,175,80,.12)',
+      borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#4CAF50',fill:true,tension:.3}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.raw)}}},
+    scales:{y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K',font:{size:9}},grid:{color:'#f0f4f8'}},x:{ticks:{font:{size:10}},grid:{display:false}}}
+  }});
 
   // ── Block Tables ──
 }
