@@ -1055,6 +1055,12 @@ function renderOverviewAll(el, schools, kpi, D){
     <div class="card" style="background:#fff;padding:18px 20px">
       <div class="card-title">Enrollment by School Type</div>
       <div id="stype-ov-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding-top:4px"></div>
+      <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
+        <div style="font-size:.75rem;font-weight:700;color:var(--primary);margin-bottom:10px">Class Transition Rate — 10&#8594;11 &amp; 11&#8594;12 (Year-wise Average %)
+          <span style="font-size:.68rem;font-weight:400;color:var(--text-muted);margin-left:8px">% of Class 10 students continuing to Class 11/12</span>
+        </div>
+        <div class="ch-wrap" style="height:200px"><canvas id="c-transition"></canvas></div>
+      </div>
     </div>
 
     <!-- S5: Category-wise Enrollment Trends -->
@@ -1185,6 +1191,23 @@ function renderOverviewAll(el, schools, kpi, D){
       <div style="background:#eee;border-radius:4px;height:7px"><div style="width:${Math.min(dclPct,100)}%;background:#C0392B;height:7px;border-radius:4px"></div></div>
     </div>`;
   }).join('');
+
+  // ── Class Transition Rate Chart ──
+  mkChart('c-transition',{type:'bar',data:{
+    labels:['2022-23','2023-24','2024-25','2025-26'],
+    datasets:[
+      {label:'Class 10→11 Retention %',data:[50.7,63.5,66.6,59.3],
+        backgroundColor:['rgba(244,67,54,.8)','rgba(255,152,0,.8)','rgba(76,175,80,.85)','rgba(33,150,243,.85)'],
+        borderRadius:5}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>` Retention: ${c.raw}% of Class 10 students continued to Class 11`}}},
+    scales:{
+      y:{min:0,max:100,ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:'#f0f4f8'},title:{display:true,text:'Retention %',font:{size:9}}},
+      x:{ticks:{font:{size:10}},grid:{display:false}}
+    }
+  }});
 
   // ── Category Trend Charts ──
   const catYrs=['2022-23','2023-24','2024-25','2025-26'];
