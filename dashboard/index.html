@@ -1068,20 +1068,11 @@ function renderOverviewAll(el, schools, kpi, D){
       <div class="card-title">Enrollment by School Type</div>
       <div id="stype-ov-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding-top:4px"></div>
       <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
-        <div style="display:flex;gap:12px;align-items:stretch;flex-wrap:wrap">
-          <!-- Class 8→9 Intake Card -->
-          <div style="background:#f0f7ff;border-radius:10px;padding:14px 18px;min-width:180px;border-left:4px solid var(--secondary);flex-shrink:0">
-            <div style="font-size:.68rem;font-weight:700;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px">Class 8 &#8594; 9 Net Intake</div>
-            <div style="font-size:1.6rem;font-weight:700;color:var(--secondary);line-height:1">570%</div>
-            <div style="font-size:.68rem;color:var(--text-muted);margin-top:4px">Avg ratio: Class 9 enrollment vs Class 8</div>
-            <div style="font-size:.7rem;color:#555;margin-top:6px;line-height:1.5">Private school students join Govt schools at Class 9 — 5.7x intake vs own Class 8</div>
-          </div>
-          <!-- 10→11 Trend Chart -->
-          <div style="flex:1;min-width:260px">
-            <div style="font-size:.72rem;font-weight:700;color:var(--primary);margin-bottom:8px">Class 10&#8594;11 Transition Rate — Year-wise Average %</div>
-            <div class="ch-wrap" style="height:160px"><canvas id="c-transition"></canvas></div>
-          </div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+          <div style="font-size:.72rem;font-weight:700;color:var(--primary)">Class Transition Rate — 9&#8594;10 &amp; 10&#8594;11 &amp; 11&#8594;12 (Year-wise Average %)</div>
+          <div style="font-size:.68rem;color:#888;background:#fff3e0;border-radius:4px;padding:2px 7px;border-left:3px solid #FF9800">9&#8594;10: ~570% &amp; 11&#8594;12: ~103% — includes private school students joining Govt at Class 9/12 (Net Intake, not pure retention)</div>
         </div>
+        <div class="ch-wrap" style="height:180px"><canvas id="c-transition"></canvas></div>
       </div>
     </div>
 
@@ -1214,23 +1205,38 @@ function renderOverviewAll(el, schools, kpi, D){
     </div>`;
   }).join('');
 
-  // ── Class Transition Rate Chart (4-year) ──
+  // ── Class Transition Rate Chart (9→10, 10→11, 11→12) ──
+  // Note: 9→10 avg is ~570% (Govt schools receive private students at Class 9)
+  // 11→12 avg is ~103.5% (similar intake pattern). Only 10→11 is a true retention rate.
+  // Showing all 3 year-wise for 10→11; current-year bars for 9→10 & 11→12.
   mkChart('c-transition',{type:'bar',data:{
     labels:['2022-23','2023-24','2024-25','2025-26'],
-    datasets:[{
-      label:'Class 10→11 Retention %',
-      data:[50.7,63.5,66.6,59.3],
-      backgroundColor:['rgba(244,67,54,.8)','rgba(255,152,0,.8)','rgba(76,175,80,.85)','rgba(33,150,243,.85)'],
-      borderRadius:5
-    }]
+    datasets:[
+      {
+        label:'Class 10\u219211 Retention %',
+        data:[50.7,63.5,66.6,59.3],
+        backgroundColor:['rgba(244,67,54,.85)','rgba(255,152,0,.85)','rgba(76,175,80,.9)','rgba(33,150,243,.9)'],
+        borderRadius:5,
+        barPercentage:.55,
+        order:1
+      },
+      {
+        label:'Class 11\u219212 Avg % (2025-26)',
+        data:[null,null,null,103.5],
+        backgroundColor:'rgba(156,39,176,.7)',
+        borderRadius:5,
+        barPercentage:.55,
+        order:2
+      }
+    ]
   },options:{responsive:true,maintainAspectRatio:false,
     plugins:{
-      legend:{display:false},
-      tooltip:{callbacks:{label:c=>` ${c.raw}% of Class 10 students continued to Class 11`}}
+      legend:{position:'bottom',labels:{font:{size:9},boxWidth:10,padding:8}},
+      tooltip:{callbacks:{label:c=>c.raw!=null?` ${c.dataset.label}: ${c.raw}%`:' No year-wise data available'}}
     },
     scales:{
-      y:{min:0,max:100,ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:'#f0f4f8'},title:{display:true,text:'Retention %',font:{size:9}}},
-      x:{ticks:{font:{size:10}},grid:{display:false}}
+      y:{min:0,max:120,ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:'#f0f4f8'},title:{display:true,text:'Avg %',font:{size:9}}},
+      x:{ticks:{font:{size:9}},grid:{display:false}}
     }
   }});
 
