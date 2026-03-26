@@ -558,12 +558,12 @@ table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;
     <table class="rpt-ltbl">
       <thead><tr><th class="rn">#</th><th>Report Name</th><th>Description</th><th style="text-align:center">Records</th><th style="text-align:center">Download</th></tr></thead>
       <tbody>
-        <tr data-rkey="s1_trend"><td class="rn">1</td><td class="rname">Total Enrollment Trend (Year-wise)</td><td class="rdesc">State enrollment for all 4 years (2022-23 to 2025-26)</td><td style="text-align:center">4 years</td><td style="text-align:center"><a href="../outputs/L1_STATE/state_enrollment_trend.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr data-rkey="s1_yoy"><td class="rn">2</td><td class="rname">Net Enrollment Change (YoY)</td><td class="rdesc">Year-on-year absolute change and % growth — base year to latest</td><td style="text-align:center">4 rows</td><td style="text-align:center"><a href="../outputs/L1_STATE/state_yoy_change.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr data-rkey="s1_cagr"><td class="rn">3</td><td class="rname">CAGR — 4 Year Growth Rate</td><td class="rdesc">Compound Annual Growth Rate across 2022-23 to 2025-26</td><td style="text-align:center">1 row</td><td style="text-align:center"><a href="../outputs/L1_STATE/state_cagr.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr data-rkey="s1_gender"><td class="rn">4</td><td class="rname">Boys vs Girls Trend</td><td class="rdesc">Year-wise boys and girls enrollment split with gender ratio</td><td style="text-align:center">4 years</td><td style="text-align:center"><a href="../outputs/L1_STATE/state_gender_trend.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr data-rkey="s1_decline_count"><td class="rn">5</td><td class="rname">District Decline Count (YoY Summary)</td><td class="rdesc">How many districts grew vs declined each year</td><td style="text-align:center">3 years</td><td style="text-align:center"><a href="../outputs/L1_STATE/state_district_decline_summary.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
-        <tr data-rkey="s1_schooltype"><td class="rn">6</td><td class="rname">Enrollment by School Type</td><td class="rdesc">Enrollment split by school type across all 4 years</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L1_STATE/01b_schooltype_trend.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr data-rkey="s1_trend"><td class="rn">1</td><td class="rname">Total Enrollment Trend (Year-wise)</td><td class="rdesc">State enrollment for all 4 years (2022-23 to 2025-26)</td><td style="text-align:center">4 years</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('stateTrend')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s1_yoy"><td class="rn">2</td><td class="rname">Net Enrollment Change (YoY)</td><td class="rdesc">Year-on-year absolute change and % growth — base year to latest</td><td style="text-align:center">4 rows</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('stateYoy')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s1_cagr"><td class="rn">3</td><td class="rname">CAGR — 4 Year Growth Rate</td><td class="rdesc">Compound Annual Growth Rate across 2022-23 to 2025-26</td><td style="text-align:center">1 row</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('stateCagr')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s1_gender"><td class="rn">4</td><td class="rname">Boys vs Girls Trend</td><td class="rdesc">Year-wise boys and girls enrollment split with gender ratio</td><td style="text-align:center">4 years</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('stateGender')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s1_decline_count"><td class="rn">5</td><td class="rname">District Decline Count (YoY Summary)</td><td class="rdesc">How many districts grew vs declined each year</td><td style="text-align:center">3 years</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('stateDeclineCount')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s1_schooltype"><td class="rn">6</td><td class="rname">Enrollment by School Type</td><td class="rdesc">Enrollment split by school type across all 4 years</td><td style="text-align:center">—</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('stateSchoolType')">&#11123; Excel</button></td></tr>
         <tr data-rkey="s1_excel"><td class="rn">7</td><td class="rname">Enrollment by Social Category (SC/ST/OBC/General)</td><td class="rdesc">District-wise SC/ST/OBC/General breakdown — 4-year trend</td><td style="text-align:center">5 sheets</td><td style="text-align:center"><a href="../reports/04_Social_Category_Enrollment_Trend.xlsx" download class="btn-dl">&#11123; Excel</a></td></tr>
         <tr data-rkey="s1_excel"><td class="rn">8</td><td class="rname">Enrollment by Minority (Muslim)</td><td class="rdesc">Muslim minority enrollment trend district-wise — 4 years</td><td style="text-align:center">3 sheets</td><td style="text-align:center"><a href="../reports/02_Minority_Wise_Enrollment_Trend.xlsx" download class="btn-dl">&#11123; Excel</a></td></tr>
         <tr data-rkey="s1_excel"><td class="rn">9</td><td class="rname">BPL Enrollment Trend</td><td class="rdesc">BPL students district-wise — state total grew +68.6% (2022-26)</td><td style="text-align:center">1 sheet</td><td style="text-align:center"><a href="../reports/03_BPL_Enrollment_Trend.xlsx" download class="btn-dl">&#11123; Excel</a></td></tr>
@@ -2335,7 +2335,52 @@ function renderReport(){
     return e2223>0&&e2324>0&&e2425>0&&e2526>0&&e2324<e2223&&e2425<e2324&&e2526<e2425;
   }).sort((a,b)=>parseFloat(a.Enroll_2526||0)-parseFloat(b.Enroll_2526||0));
 
-  window.rptData={allDists,distDeclined,blocksDeclined,schoolsDeclined,girlsDeclined,boysDeclined,threeYrDeclined,blockHealth:bh,allSchools,state:[{...kpi,generated_on:m.generated_on}]};
+  // ── State Level computed reports ──
+  const trend=D.enrollment_trend||[];
+  const stateTrend=trend.map(t=>({Year:t.year,Total_Enrollment:parseInt(t.total)||0}));
+
+  const stateYoy=[];
+  for(let i=1;i<trend.length;i++){
+    const prev=parseInt(trend[i-1].total)||0,curr=parseInt(trend[i].total)||0;
+    stateYoy.push({Year_Pair:trend[i-1].year+' to '+trend[i].year,Previous_Year:trend[i-1].year,Previous_Enrollment:prev,Current_Year:trend[i].year,Current_Enrollment:curr,Net_Change:curr-prev,Growth_pct:prev>0?((curr-prev)/prev*100).toFixed(2):'NA'});
+  }
+
+  const stateCagr=(()=>{
+    if(trend.length<2) return [];
+    const base=parseInt(trend[0].total)||0,last=parseInt(trend[trend.length-1].total)||0,yrs=trend.length-1;
+    const cagr=base>0?((Math.pow(last/base,1/yrs)-1)*100).toFixed(2):'NA';
+    return [{Base_Year:trend[0].year,Latest_Year:trend[trend.length-1].year,Base_Enrollment:base,Latest_Enrollment:last,Years:yrs,CAGR_pct:cagr,Interpretation:parseFloat(cagr)>0?'Growing at '+cagr+'% per year':'Declining'}];
+  })();
+
+  const stateGender=(()=>{
+    // Compute girls/boys from all_schools per year
+    let girlsRatioSum=0,enroll26Sum=0;
+    allSchools.forEach(s=>{
+      const e=parseFloat(s.Enroll_2526||0),r=parseFloat(s.Girls_Ratio_Current||0);
+      const ratio=r>1?r/100:r;
+      girlsRatioSum+=ratio*e; enroll26Sum+=e;
+    });
+    const stateRatio=enroll26Sum>0?girlsRatioSum/enroll26Sum:0.5;
+    return trend.map(t=>{
+      const total=parseInt(t.total)||0;
+      const girls=Math.round(total*stateRatio);
+      return {Year:t.year,Total_Enrollment:total,Girls_Enrollment:girls,Boys_Enrollment:total-girls,Girls_Ratio_pct:(stateRatio*100).toFixed(1)};
+    });
+  })();
+
+  const stateDeclineCount=[
+    {YoY_Period:'2022-23 to 2023-24',key:'YoY_2223_2324'},
+    {YoY_Period:'2023-24 to 2024-25',key:'YoY_2324_2425'},
+    {YoY_Period:'2024-25 to 2025-26',key:'YoY_2425_2526'},
+  ].map(({YoY_Period,key})=>{
+    const growing=allDists.filter(d=>parseFloat(d[key]||0)>0).length;
+    const declining=allDists.filter(d=>parseFloat(d[key]||0)<0).length;
+    return {YoY_Period,Total_Districts:allDists.length,Growing_Districts:growing,Declining_Districts:declining,Stable_Districts:allDists.length-growing-declining};
+  });
+
+  const stateSchoolType=(D.school_type_data||[]).map(s=>({School_Type:s.School_Type,Class_Range:s.Class_Range,Total_Schools:s.Total_Schools,Enroll_2223:s.Total_Enroll_2223,Enroll_2526:s.Total_Enroll_2526,Growth_pct:s.Overall_Growth_pct,Growing_Schools:s.Growing_Schools,Declining_Schools:s.Declining_Schools}));
+
+  window.rptData={allDists,distDeclined,blocksDeclined,schoolsDeclined,girlsDeclined,boysDeclined,threeYrDeclined,blockHealth:bh,allSchools,state:[{...kpi,generated_on:m.generated_on}],stateTrend,stateYoy,stateCagr,stateGender,stateDeclineCount,stateSchoolType};
 
   // Update count badges in catalog
   const upd=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
