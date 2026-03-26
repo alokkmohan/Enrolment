@@ -1,0 +1,2750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>School Enrollment Analysis Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --primary:#1a3a5c;--secondary:#2196F3;--success:#4CAF50;
+  --warning:#FF9800;--danger:#F44336;--light-bg:#f5f7fa;
+  --white:#fff;--text-dark:#1a3a5c;--text-muted:#6c757d;
+  --border:#e0e4ea;--shadow:0 2px 8px rgba(0,0,0,.08);--radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--light-bg);color:var(--text-dark);font-size:14px;}
+
+/* Loader */
+#loader{position:fixed;inset:0;background:var(--primary);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;color:#fff;}
+.spin{width:44px;height:44px;border:4px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .8s linear infinite;margin-bottom:14px;}
+@keyframes sp{to{transform:rotate(360deg)}}
+#loader.hidden{display:none;}
+
+/* Header */
+.hdr{position:sticky;top:0;z-index:101;background:var(--primary);color:#fff;height:60px;padding:0 24px;display:flex;justify-content:space-between;align-items:center;}
+.hdr-left h1{font-size:1.1rem;font-weight:700;}
+.hdr-left p{font-size:.72rem;opacity:.75;margin-top:1px;}
+.hdr-right{font-size:.72rem;opacity:.75;text-align:right;}
+
+/* Filter Bar */
+.fbar{background:#fff;border-bottom:1px solid var(--border);padding:8px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.fbar select,.fbar input{font-size:.78rem;padding:5px 9px;border:1px solid var(--border);border-radius:6px;font-family:inherit;background:#fff;cursor:pointer;}
+.fbar select:focus{outline:none;border-color:var(--secondary);}
+.btn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:6px;border:none;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s;}
+.btn-primary{background:var(--secondary);color:#fff;}
+.btn-outline{background:#fff;color:var(--primary);border:1px solid var(--border);}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-success{background:var(--success);color:#fff;}
+.btn:hover{opacity:.85;}
+
+/* Tabs */
+.tabnav{background:#fff;border-bottom:2px solid var(--border);display:flex;overflow-x:auto;padding:0 16px;}
+.tbtn{padding:11px 16px;border:none;background:none;font-family:inherit;font-size:.8rem;font-weight:600;color:var(--text-muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:.15s;}
+.tbtn.active{color:var(--primary);border-bottom-color:var(--primary);}
+.tbtn:hover{color:var(--primary);}
+.tpane{display:none;padding:16px;max-width:1280px;margin:0 auto;}
+.tpane.active{display:block;}
+
+/* Grid */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.g6{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;}
+
+/* Card */
+.card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;margin-bottom:14px;}
+.card-title{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--primary);margin-bottom:12px;border-left:4px solid var(--primary);padding-left:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+
+/* KPI */
+.kpi{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:10px 14px;max-height:85px;overflow:hidden;}
+.kpi-lbl{font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:2px;}
+.kpi-val{font-size:1.45rem;font-weight:700;line-height:1.1;}
+.kpi-sub{font-size:.62rem;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.kpi.danger .kpi-val{color:var(--danger);}
+.kpi.success .kpi-val{color:var(--success);}
+.kpi.warning .kpi-val{color:var(--warning);}
+.kpi.primary .kpi-val{color:var(--primary);}
+.kpi.secondary .kpi-val{color:var(--secondary);}
+
+/* Year cards */
+.yr-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;text-align:center;border-top:4px solid var(--secondary);}
+.yr-card .yc-yr{font-size:.75rem;font-weight:600;color:var(--text-muted);margin-bottom:4px;}
+.yr-card .yc-val{font-size:1.5rem;font-weight:700;color:var(--primary);margin-bottom:2px;}
+.yr-card .yc-sub{font-size:.7rem;color:var(--text-muted);margin-bottom:4px;}
+.yr-card .yc-chg{font-size:.82rem;font-weight:600;}
+.yc-chg.pos{color:var(--success);}
+.yc-chg.neg{color:var(--danger);}
+
+/* Zone boxes */
+.zone-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.zone-box{border-radius:8px;padding:10px 14px;color:#fff;display:flex;align-items:center;gap:10px;height:64px;}
+.zone-box .zn{font-size:1.6rem;font-weight:700;line-height:1;}
+.zone-box .zl{font-size:.75rem;font-weight:600;opacity:.95;}
+.zone-RED{background:var(--danger);}
+.zone-ORANGE{background:var(--warning);}
+.zone-YELLOW{background:#c9a800;}
+.zone-GREEN{background:var(--success);}
+
+/* Chart wrapper */
+.ch-wrap{position:relative;width:100%;}
+
+/* Tables */
+.tbl-wrap{overflow-x:auto;}
+table.dt{width:100%;border-collapse:collapse;font-size:.78rem;}
+table.dt thead th{background:var(--primary);color:#fff;padding:8px 10px;font-size:.72rem;font-weight:600;white-space:nowrap;cursor:pointer;user-select:none;position:relative;}
+table.dt thead th:hover{background:#234f7d;}
+table.dt thead th.asc::after{content:' ▲';font-size:.6rem;}
+table.dt thead th.desc::after{content:' ▼';font-size:.6rem;}
+table.dt tbody tr:nth-child(even){background:#f8fafc;}
+table.dt tbody tr:hover{background:#e8f0fe;}
+table.dt td{padding:7px 10px;vertical-align:middle;border-bottom:1px solid #eee;}
+.tbl-ctrl{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:.75rem;color:var(--text-muted);flex-wrap:wrap;gap:6px;}
+.pgbtns{display:flex;gap:4px;}
+.pbtn{padding:3px 10px;border:1px solid var(--border);border-radius:5px;background:#fff;cursor:pointer;font-size:.75rem;}
+.pbtn:disabled{opacity:.35;cursor:default;}
+.pbtn:not(:disabled):hover{background:#e8f0fe;}
+
+/* Badges */
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.68rem;font-weight:700;}
+.b-danger{background:#fde8e8;color:#b71c1c;}
+.b-warning{background:#fff3e0;color:#e65100;}
+.b-success{background:#e8f5e9;color:#1b5e20;}
+.b-info{background:#e3f2fd;color:#0d47a1;}
+.b-grey{background:#f0f0f0;color:#555;}
+.b-red{background:var(--danger);color:#fff;}
+.b-orange{background:var(--warning);color:#fff;}
+.b-yellow{background:#ffc107;color:#333;}
+.b-green{background:var(--success);color:#fff;}
+.b-purple{background:#7b1fa2;color:#fff;}
+
+/* Flags */
+.flag{display:inline-block;padding:1px 5px;border-radius:3px;font-size:.65rem;font-weight:700;margin-right:2px;}
+.f-risk{background:var(--danger);color:#fff;}
+.f-model{background:#7b1fa2;color:#fff;}
+.f-alert{background:var(--warning);color:#fff;}
+.f-decline{background:#b71c1c;color:#fff;}
+.f-girls{background:#e91e63;color:#fff;}
+
+/* Risk tab */
+.risk-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px;}
+.risk-card{border-radius:8px;padding:18px;text-align:center;color:#fff;}
+.risk-card .rn{font-size:2rem;font-weight:700;}
+.risk-card .rl{font-size:.8rem;margin-top:2px;}
+.rHIGH{background:linear-gradient(135deg,#c62828,#f44336);}
+.rMEDIUM{background:linear-gradient(135deg,#e65100,#ff9800);}
+.rLOW{background:linear-gradient(135deg,#1b5e20,#4caf50);}
+
+/* Block cards */
+.block-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:12px;}
+.block-card{background:#fff;border-radius:8px;box-shadow:var(--shadow);padding:10px 12px;border-left:4px solid #ddd;}
+.block-card.RED{border-left-color:var(--danger);}
+.block-card.ORANGE{border-left-color:var(--warning);}
+.block-card.YELLOW{border-left-color:#f1c40f;}
+.block-card.GREEN{border-left-color:var(--success);}
+.bc-name{font-weight:700;font-size:.8rem;}
+.bc-dist{font-size:.68rem;color:var(--text-muted);}
+.bc-stats{display:flex;gap:8px;margin-top:5px;font-size:.68rem;}
+
+/* Modal */
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;overflow-y:auto;padding:20px;}
+#modal-overlay.open{display:flex;align-items:flex-start;justify-content:center;}
+.modal{background:#fff;border-radius:12px;width:100%;max-width:780px;box-shadow:0 8px 32px rgba(0,0,0,.2);}
+.modal-hdr{background:var(--primary);color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:flex-start;border-radius:12px 12px 0 0;}
+.modal-hdr h2{font-size:.95rem;margin-bottom:3px;}
+.modal-hdr p{font-size:.72rem;opacity:.8;}
+.modal-close{background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer;line-height:1;padding:0;}
+.modal-body{padding:20px;}
+.msec{margin-bottom:18px;}
+.msec h3{font-size:.75rem;font-weight:700;text-transform:uppercase;color:var(--primary);margin-bottom:8px;}
+
+/* Report */
+.rpt-nav{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--border);padding:7px 12px;display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin:-16px -16px 16px;box-shadow:0 2px 4px rgba(0,0,0,.06);}
+.rpt-nav a{font-size:.72rem;font-weight:600;color:var(--primary);text-decoration:none;padding:4px 8px;border-radius:5px;background:#f0f4f8;white-space:nowrap;cursor:pointer;}
+.rpt-nav a:hover,.rpt-nav a.active{background:var(--primary);color:#fff;}
+.rpt-sec{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;margin-bottom:12px;scroll-margin-top:120px;}
+.rpt-sec-hdr{display:flex;justify-content:space-between;align-items:center;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--primary);background:#f8f9fa;padding:9px 14px;border-left:4px solid var(--secondary);border-radius:6px;margin-bottom:10px;}
+.rpt-summary{font-size:.75rem;color:#555;background:#f0f7ff;padding:6px 12px;border-left:3px solid var(--secondary);border-radius:0 5px 5px 0;margin-bottom:8px;line-height:1.7;}
+.rpt-level{border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden;background:#fff;}
+.rpt-lhdr{padding:12px 18px;color:#fff;font-weight:700;font-size:.95rem;display:flex;justify-content:space-between;align-items:center;}
+.rpt-ltbl{width:100%;border-collapse:collapse;}
+.rpt-ltbl th{background:#f8f9fa;font-size:.75rem;font-weight:700;color:#555;padding:8px 12px;border-bottom:2px solid var(--border);text-align:left;}
+.rpt-ltbl td{padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:.8rem;vertical-align:middle;}
+.rpt-ltbl tr:last-child td{border-bottom:none;}
+.rpt-ltbl tr:hover td{background:#fafbff;}
+.rpt-ltbl .rn{color:#aaa;font-size:.72rem;width:28px;}
+.rpt-ltbl .rname{font-weight:600;color:#333;}
+.rpt-ltbl .rdesc{color:#777;font-size:.75rem;}
+.rpt-ltbl .rcnt{font-size:.72rem;color:#fff;background:#888;padding:2px 7px;border-radius:10px;white-space:nowrap;}
+.rcnt-decl{background:#C0392B;}
+.rcnt-ok{background:#27AE60;}
+.rcnt-info{background:#1565C0;}
+.btn-dl{display:inline-block;font-size:.72rem;padding:4px 10px;background:#27AE60;color:#fff;border:none;border-radius:5px;cursor:pointer;text-decoration:none;white-space:nowrap;font-family:inherit;font-weight:600;}
+.btn-dl:hover{background:#1E8449;color:#fff;}
+.btn-dl.dyn{background:#1565C0;}
+.btn-dl.dyn:hover{background:#0D47A1;}
+/* Report row expand/preview */
+.rpt-ltbl tbody tr[data-rkey]{cursor:pointer;}
+.rpt-ltbl tbody tr[data-rkey]:hover>td{background:#f4f7ff;}
+.rpt-chev{display:inline-block;width:13px;font-size:.68rem;color:#aaa;margin-right:3px;transition:transform .18s;}
+.rpt-chev.open{transform:rotate(90deg);color:var(--primary);}
+.rpt-exp>td{padding:0!important;border:none;}
+.rpt-exp-inner{padding:10px 16px;background:#f5f8ff;border-bottom:2px solid #dde5f0;}
+.rpt-ptbl{width:100%;border-collapse:collapse;font-size:.74rem;margin-top:2px;}
+.rpt-ptbl th{background:#dce6f5;padding:5px 8px;font-weight:700;color:#1565C0;text-align:left;white-space:nowrap;}
+.rpt-ptbl td{padding:4px 8px;border-bottom:1px solid #edf0f5;color:#333;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rpt-ptbl tr:hover td{background:#fff8e1;}
+.rpt-pmsg{color:#888;font-size:.78rem;font-style:italic;display:block;padding:4px 0;}
+
+/* Heatmap */
+.hm td{text-align:center;padding:4px 7px;font-size:.68rem;font-weight:600;border:1px solid #ddd;}
+.hm th{background:var(--primary);color:#fff;padding:6px 9px;font-size:.68rem;white-space:nowrap;}
+.hm td.bnm{text-align:left;background:#f8fafc;font-size:.68rem;white-space:nowrap;}
+
+/* Pos/Neg */
+.pos{color:var(--success);font-weight:600;}
+.neg{color:var(--danger);font-weight:600;}
+
+/* Print */
+@media print{
+  .fbar,.tabnav,.btn,#modal-overlay,#loader{display:none!important;}
+  .tpane{display:block!important;}
+  .card,.kpi{box-shadow:none;border:1px solid #ddd;}
+  body{background:#fff;}
+}
+
+/* Responsive */
+@media(max-width:900px){.g6{grid-template-columns:repeat(3,1fr);}.g4{grid-template-columns:repeat(2,1fr);}.g2{grid-template-columns:1fr;}.zone-row{grid-template-columns:repeat(2,1fr);}.risk-sum{grid-template-columns:1fr 1fr;}}
+@media(max-width:600px){.g6{grid-template-columns:repeat(2,1fr);}.g3{grid-template-columns:1fr;}.g4{grid-template-columns:1fr;}.kpi-val{font-size:1.1rem;}.hdr-left h1{font-size:.9rem;}.risk-sum{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div id="loader"><div class="spin"></div><p>Loading dashboard data…</p></div>
+
+<div id="app" style="display:none">
+
+<!-- Header -->
+<header class="hdr">
+  <div class="hdr-left">
+    <h1>School Enrollment Analysis Dashboard</h1>
+    <p>State Overview | 2022-23 to 2025-26</p>
+  </div>
+  <div class="hdr-right">
+    <div>Last Updated: <span id="hdr-date">—</span></div>
+    <div id="hdr-meta">—</div>
+  </div>
+</header>
+
+<!-- Tab Nav -->
+<nav class="tabnav">
+  <button class="tbtn active" data-tab="overview">&#127968; State Overview</button>
+  <button class="tbtn" data-tab="districts">&#128205; District</button>
+  <button class="tbtn" data-tab="blocks">&#128205; Block</button>
+  <button class="tbtn" data-tab="schools">&#128269; School Finder</button>
+  <button class="tbtn" data-tab="report">&#128196; Report</button>
+</nav>
+
+<!-- TAB 1: STATE OVERVIEW -->
+<div id="tab-overview" class="tpane active">
+  <div id="ov-year-cards" class="g4" style="margin-bottom:14px"></div>
+  <div id="ov-main-content"></div>
+  <div id="ov-kpi-row" class="g5" style="margin-top:14px;display:grid;grid-template-columns:repeat(5,1fr);gap:12px"></div>
+</div>
+
+<!-- TAB 2: DISTRICTS -->
+<div id="tab-districts" class="tpane">
+  <div class="fbar" style="position:static;margin-bottom:14px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
+    <select id="f-district"><option value="">All Districts</option></select>
+    <button class="btn btn-primary" onclick="onDistrictChange()">&#9654; Go</button>
+    <button class="btn btn-outline" onclick="resetFilters()">&#8635; Reset</button>
+    <span id="dist-loading" style="display:none;font-size:.78rem;color:var(--text-muted);display:none;align-items:center;gap:6px">
+      <span style="width:14px;height:14px;border:2px solid #ccc;border-top-color:var(--primary);border-radius:50%;display:inline-block;animation:sp .7s linear infinite"></span> Loading...
+    </span>
+  </div>
+  <!-- District Detail Panel (shown when district selected) -->
+  <div id="dist-detail" style="display:none">
+    <div class="card" style="background:var(--primary);color:#fff;padding:16px 20px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <div id="dd-name" style="font-size:1.15rem;font-weight:700"></div>
+          <div id="dd-meta" style="font-size:.75rem;opacity:.78;margin-top:3px"></div>
+        </div>
+        <button onclick="clearDistrictFilter()" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:.78rem;font-family:inherit">&#10005; Clear Filter</button>
+      </div>
+    </div>
+    <!-- 4 Year Cards -->
+    <div class="g4" id="dd-year-cards" style="margin-bottom:14px"></div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">Enrollment Trend — All 4 Years
+          <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-dd-trend','dist_trend')">&#128444; PNG</button>
+        </div>
+        <div class="ch-wrap" style="height:220px"><canvas id="c-dd-trend"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128104; Boys vs &#128105; Girls Growth</div>
+        <div class="ch-wrap" style="height:220px"><canvas id="c-dd-gender"></canvas></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">&#128104; Boys Enrollment Trend — Year Wise
+          <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-dd-boys','dist_boys_trend')">&#128444; PNG</button>
+        </div>
+        <div class="ch-wrap" style="height:210px"><canvas id="c-dd-boys"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128105; Girls Enrollment Trend — Year Wise
+          <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-dd-girls','dist_girls_trend')">&#128444; PNG</button>
+        </div>
+        <div class="ch-wrap" style="height:210px"><canvas id="c-dd-girls"></canvas></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">Top 5 Blocks — Highest Enrollment
+          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._ddTop5,'dist_top5_blocks')">&#11123; Excel</button>
+        </div>
+        <div class="tbl-wrap" id="dd-top5-tbl"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Declining Blocks — RED / ORANGE Zone
+          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._ddDecl,'dist_declining_blocks')">&#11123; Excel</button>
+        </div>
+        <div class="tbl-wrap" id="dd-decl-tbl"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Default all-districts view (shown when no district selected) -->
+  <div id="dist-default">
+    <div class="card">
+      <div class="card-title">District Enrollment Growth Ranking</div>
+      <div class="ch-wrap" style="height:320px"><canvas id="c-distrank"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">District Comparison Table
+        <button class="btn btn-success" onclick="dlXL('dist-data','districts')">&#11123; Download Excel</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="dt" id="dist-tbl">
+          <thead><tr>
+            <th onclick="sortTbl('dist-tbl',0,'num')">Rank</th>
+            <th onclick="sortTbl('dist-tbl',1,'str')">District</th>
+            <th onclick="sortTbl('dist-tbl',2,'num')">Schools</th>
+            <th onclick="sortTbl('dist-tbl',3,'num')">Enroll 2022-23</th>
+            <th onclick="sortTbl('dist-tbl',4,'num')">Enroll 2025-26</th>
+            <th onclick="sortTbl('dist-tbl',5,'num')">Growth%</th>
+            <th onclick="sortTbl('dist-tbl',6,'num')">Girls Growth%</th>
+            <th onclick="sortTbl('dist-tbl',7,'num')">Cont 8→9</th>
+            <th onclick="sortTbl('dist-tbl',8,'num')">Red Blocks</th>
+            <th onclick="sortTbl('dist-tbl',9,'str')">Health</th>
+          </tr></thead>
+          <tbody id="dist-tbody"></tbody>
+        </table>
+      </div>
+      <div class="tbl-ctrl"><span id="dist-info"></span><div class="pgbtns"><button class="pbtn" id="dist-prev" onclick="pg('dist',-1)">&#8592;</button><button class="pbtn" id="dist-next" onclick="pg('dist',1)">&#8594;</button></div></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">Top 10 Districts by Enrollment
+          <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-top10dist','top_districts')">&#128444; PNG</button>
+        </div>
+        <div class="ch-wrap" style="height:260px"><canvas id="c-top10dist"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Bottom 10 Districts by Growth
+          <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-bot10dist','bottom_districts')">&#128444; PNG</button>
+        </div>
+        <div class="ch-wrap" style="height:260px"><canvas id="c-bot10dist"></canvas></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card"><div class="card-title">Girls vs Boys Growth (Top 20 Districts)</div><div class="ch-wrap" style="height:260px"><canvas id="c-gender"></canvas></div></div>
+      <div class="card"><div class="card-title">Enrollment Trend — Top 10 Districts</div><div class="ch-wrap" style="height:260px"><canvas id="c-disttrend"></canvas></div></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">&#128104; Boys Enrollment Declining
+          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlBoysDecl()">&#11123; Excel</button>
+        </div>
+        <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:8px">Districts where boys enrollment fell</div>
+        <div id="dist-boys-decl-list"></div>
+        <div id="dist-boys-decl-footer" style="font-size:.72rem;color:var(--text-muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128105; Girls Enrollment Declining
+          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlGirlsDecl()">&#11123; Excel</button>
+        </div>
+        <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:8px">Districts where girls enrollment fell</div>
+        <div id="dist-girls-decl-list"></div>
+        <div id="dist-girls-decl-footer" style="font-size:.72rem;color:var(--text-muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: BLOCKS -->
+<div id="tab-blocks" class="tpane">
+  <!-- Block Filter -->
+  <div class="fbar" style="position:static;margin-bottom:14px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08)">
+    <select id="blk-f-district" onchange="onBlkDistrictChange()"><option value="">All Districts</option></select>
+    <select id="blk-f-block"><option value="">All Blocks</option></select>
+    <button class="btn btn-primary" onclick="onBlkGo()">&#9654; Go</button>
+    <button class="btn btn-outline" onclick="resetBlkFilter()">&#8635; Reset</button>
+    <span id="blk-loading" style="display:none;align-items:center;gap:6px;font-size:.78rem;color:var(--text-muted)">
+      <span style="width:14px;height:14px;border:2px solid #ccc;border-top-color:var(--primary);border-radius:50%;display:inline-block;animation:sp .7s linear infinite"></span> Loading...
+    </span>
+  </div>
+
+  <!-- Block Detail Panel -->
+  <div id="blk-detail" style="display:none">
+    <div class="card" style="background:var(--primary);color:#fff;padding:16px 20px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+        <div>
+          <div id="blk-dd-name" style="font-size:1.15rem;font-weight:700"></div>
+          <div id="blk-dd-meta" style="font-size:.75rem;opacity:.78;margin-top:3px"></div>
+        </div>
+        <button onclick="resetBlkFilter()" style="background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:.78rem;font-family:inherit">&#10005; Clear</button>
+      </div>
+    </div>
+    <div class="g4" id="blk-dd-year-cards" style="margin-bottom:14px"></div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">Enrollment Trend — 4 Years
+          <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-blk-trend','block_trend')">&#128444; PNG</button>
+        </div>
+        <div class="ch-wrap" style="height:220px"><canvas id="c-blk-trend"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128104; Boys vs &#128105; Girls Enrollment</div>
+        <div class="ch-wrap" style="height:220px"><canvas id="c-blk-gender"></canvas></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">&#128104; Boys Enrollment Declining Schools
+          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._blkBoysDecl,'block_boys_declining')">&#11123; Excel</button>
+        </div>
+        <div class="tbl-wrap" id="blk-boys-decl-tbl"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128105; Girls Enrollment Declining Schools
+          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._blkGirlsDecl,'block_girls_declining')">&#11123; Excel</button>
+        </div>
+        <div class="tbl-wrap" id="blk-girls-decl-tbl"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Default Block View -->
+  <div id="blk-default">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">Block Zone Distribution</div>
+      <div class="zone-row" id="blk-zone-row"></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">Top 5 Blocks — Highest Enrollment
+          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._top5blk,'top_blocks')">&#11123; Excel</button>
+        </div>
+        <div class="tbl-wrap" id="top5blk-tbl"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Bottom 5 Blocks — RED/ORANGE Zone
+          <button class="btn btn-success" style="font-size:.65rem;padding:2px 6px" onclick="dlExcel(window._bot5blk,'declined_blocks')">&#11123; Excel</button>
+        </div>
+        <div class="tbl-wrap" id="bot5blk-tbl"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Block Health Table
+        <button class="btn btn-success" onclick="dlXL('block-data','blocks')">&#11123; Download Excel</button>
+      </div>
+      <div class="tbl-wrap">
+        <table class="dt" id="block-tbl">
+          <thead><tr>
+            <th onclick="sortTbl('block-tbl',0,'str')">District</th>
+            <th onclick="sortTbl('block-tbl',1,'str')">Block</th>
+            <th onclick="sortTbl('block-tbl',2,'str')">Zone</th>
+            <th onclick="sortTbl('block-tbl',3,'num')">Schools</th>
+            <th onclick="sortTbl('block-tbl',4,'num')">Growing</th>
+            <th onclick="sortTbl('block-tbl',5,'num')">Declining</th>
+            <th onclick="sortTbl('block-tbl',6,'num')">Avg Growth%</th>
+            <th onclick="sortTbl('block-tbl',7,'num')">Cont 8→9</th>
+            <th onclick="sortTbl('block-tbl',8,'str')">Priority</th>
+          </tr></thead>
+          <tbody id="block-tbody"></tbody>
+        </table>
+      </div>
+      <div class="tbl-ctrl"><span id="block-info"></span><div class="pgbtns"><button class="pbtn" id="block-prev" onclick="pg('block',-1)">&#8592;</button><button class="pbtn" id="block-next" onclick="pg('block',1)">&#8594;</button></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 4: SCHOOL FINDER -->
+<div id="tab-schools" class="tpane">
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title" style="margin-bottom:10px">&#128269; Search School by UDISE Code</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input type="text" id="udise-input" placeholder="Enter UDISE Code (e.g. 09140101601)" maxlength="11"
+        style="flex:1;min-width:200px;padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:.85rem;font-family:inherit;letter-spacing:1px"
+        oninput="lookupUdise()"/>
+      <button class="btn btn-outline" onclick="document.getElementById('udise-input').value='';document.getElementById('udise-result').style.display='none'">&#8635; Clear</button>
+    </div>
+    <div id="udise-result" style="display:none;margin-top:14px"></div>
+  </div>
+  <div class="card">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+      <input type="text" id="sch-search" placeholder="&#128269; Search school by name..." style="flex:1;min-width:200px;padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:.82rem;font-family:inherit" oninput="renderSchools()"/>
+      <select id="sch-risk" onchange="renderSchools()" style="padding:6px 9px;border:1px solid var(--border);border-radius:6px;font-size:.78rem">
+        <option value="">All Risk Levels</option>
+        <option value="HIGH">HIGH</option>
+        <option value="MEDIUM">MEDIUM</option>
+        <option value="LOW">LOW</option>
+      </select>
+      <select id="sch-trend" onchange="renderSchools()" style="padding:6px 9px;border:1px solid var(--border);border-radius:6px;font-size:.78rem">
+        <option value="">All Trends</option>
+        <option value="Consistent Growth">Consistent Growth</option>
+        <option value="Consistent Decline">Consistent Decline</option>
+        <option value="Recovery">Recovery</option>
+        <option value="Peaked">Peaked</option>
+        <option value="Stable">Stable</option>
+        <option value="Volatile">Volatile</option>
+      </select>
+      <button class="btn btn-success" onclick="dlXLSchools()">&#11123; Download Filtered</button>
+    </div>
+    <div class="tbl-wrap">
+      <table class="dt" id="sch-tbl">
+        <thead><tr>
+          <th onclick="sortTbl('sch-tbl',0,'str')">School Name</th>
+          <th onclick="sortTbl('sch-tbl',1,'str')">District</th>
+          <th onclick="sortTbl('sch-tbl',2,'str')">Block</th>
+          <th onclick="sortTbl('sch-tbl',3,'str')">Type</th>
+          <th onclick="sortTbl('sch-tbl',4,'num')">Enroll 2025-26</th>
+          <th onclick="sortTbl('sch-tbl',5,'num')">Growth%</th>
+          <th onclick="sortTbl('sch-tbl',6,'str')">Trend</th>
+          <th onclick="sortTbl('sch-tbl',7,'str')">Risk</th>
+          <th>Flags</th>
+        </tr></thead>
+        <tbody id="sch-tbody"></tbody>
+      </table>
+    </div>
+    <div class="tbl-ctrl"><span id="sch-info"></span><div class="pgbtns"><button class="pbtn" id="sch-prev" onclick="pg('sch',-1)">&#8592;</button><button class="pbtn" id="sch-next" onclick="pg('sch',1)">&#8594;</button></div></div>
+  </div>
+</div>
+
+
+
+<!-- TAB 7: REPORT -->
+<div id="tab-report" class="tpane">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+    <div style="font-size:.82rem;color:#666">&#128196; All reports — Level 1 to Level 5. Live reports compute from dashboard data. CSV/Excel files are pre-generated.</div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-success" onclick="dlXLReport()">&#11123; Full Dashboard Excel</button>
+      <button class="btn btn-primary" onclick="window.print()">&#128424; Print</button>
+    </div>
+  </div>
+
+  <!-- ═══ LEVEL 1: STATE ═══ -->
+  <div class="rpt-level">
+    <div class="rpt-lhdr" style="background:linear-gradient(135deg,#1565C0,#1976D2)">
+      &#128202; Level 1 — State Level Reports
+      <span style="font-size:.75rem;font-weight:400;opacity:.85">Big picture — enrollment trend, gender, decline tracking, structural insights</span>
+    </div>
+    <table class="rpt-ltbl">
+      <thead><tr><th class="rn">#</th><th>Report Name</th><th>Description</th><th style="text-align:center">Records</th><th style="text-align:center">Download</th></tr></thead>
+      <tbody>
+        <tr data-rkey="s1_trend"><td class="rn">1</td><td class="rname">Total Enrollment Trend (Year-wise)</td><td class="rdesc">State enrollment for all 4 years (2022-23 to 2025-26)</td><td style="text-align:center">4 years</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('stateTrend')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s1_yoy"><td class="rn">2</td><td class="rname">Net Enrollment Change (YoY)</td><td class="rdesc">Year-on-year absolute change and % growth — base year to latest</td><td style="text-align:center">4 rows</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('stateYoy')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s1_cagr"><td class="rn">3</td><td class="rname">CAGR — 4 Year Growth Rate</td><td class="rdesc">Compound Annual Growth Rate across 2022-23 to 2025-26</td><td style="text-align:center">1 row</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('stateCagr')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s1_gender"><td class="rn">4</td><td class="rname">Boys vs Girls Trend</td><td class="rdesc">Year-wise boys and girls enrollment split with gender ratio</td><td style="text-align:center">4 years</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('stateGender')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s1_decline_count"><td class="rn">5</td><td class="rname">District Decline Count (YoY Summary)</td><td class="rdesc">How many districts grew vs declined each year</td><td style="text-align:center">3 years</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('stateDeclineCount')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s1_schooltype"><td class="rn">6</td><td class="rname">Enrollment by School Type</td><td class="rdesc">Enrollment split by school type across all 4 years</td><td style="text-align:center">—</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('stateSchoolType')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s1_excel"><td class="rn">7</td><td class="rname">Enrollment by Social Category (SC/ST/OBC/General)</td><td class="rdesc">District-wise SC/ST/OBC/General breakdown — 4-year trend</td><td style="text-align:center">5 sheets</td><td style="text-align:center"><a href="../reports/04_Social_Category_Enrollment_Trend.xlsx" download class="btn-dl">&#11123; Excel</a></td></tr>
+        <tr data-rkey="s1_excel"><td class="rn">8</td><td class="rname">Enrollment by Minority (Muslim)</td><td class="rdesc">Muslim minority enrollment trend district-wise — 4 years</td><td style="text-align:center">3 sheets</td><td style="text-align:center"><a href="../reports/02_Minority_Wise_Enrollment_Trend.xlsx" download class="btn-dl">&#11123; Excel</a></td></tr>
+        <tr data-rkey="s1_excel"><td class="rn">9</td><td class="rname">BPL Enrollment Trend</td><td class="rdesc">BPL students district-wise — state total grew +68.6% (2022-26)</td><td style="text-align:center">1 sheet</td><td style="text-align:center"><a href="../reports/03_BPL_Enrollment_Trend.xlsx" download class="btn-dl">&#11123; Excel</a></td></tr>
+        <tr data-rkey="s1_excel"><td class="rn">10</td><td class="rname">Medium of Instruction (MOI) Trend</td><td class="rdesc">Hindi vs Non-Hindi enrollment trend by district — 4 years</td><td style="text-align:center">3 sheets</td><td style="text-align:center"><a href="../reports/01_MOI_Medium_of_Instruction_Trend.xlsx" download class="btn-dl">&#11123; Excel</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ LEVEL 2: DISTRICT ═══ -->
+  <div class="rpt-level">
+    <div class="rpt-lhdr" style="background:linear-gradient(135deg,#2E7D32,#388E3C)">
+      &#128205; Level 2 — District Level Reports
+      <span style="font-size:.75rem;font-weight:400;opacity:.85">Growth, decline, continuity, gender, advanced district analysis</span>
+    </div>
+    <table class="rpt-ltbl">
+      <thead><tr><th class="rn">#</th><th>Report Name</th><th>Description</th><th style="text-align:center">Records</th><th style="text-align:center">Download</th></tr></thead>
+      <tbody>
+        <tr data-rkey="d2_increased_yoy"><td class="rn">1</td><td class="rname">Districts Where Enrollment Increased (YoY)</td><td class="rdesc">Districts with positive growth in 2025-26 vs 2024-25</td><td style="text-align:center"><span class="rcnt rcnt-ok" id="rc-dist-inc">58</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('distIncreasedYoy')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="d2_decreased_yoy"><td class="rn">2</td><td class="rname">Districts Where Enrollment Decreased (YoY)</td><td class="rdesc">Districts with decline in 2025-26 vs 2024-25</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-dist-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('distDeclined')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="d2_top10"><td class="rn">3</td><td class="rname">Top 10 Growing Districts</td><td class="rdesc">Best performing districts by 4-year enrollment growth</td><td style="text-align:center">10</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('distTop10')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="d2_bottom10"><td class="rn">4</td><td class="rname">Bottom 10 Declining Districts</td><td class="rdesc">Worst performing districts by 4-year growth rate</td><td style="text-align:center">10</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('distBottom10')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="d2_2yr_growth"><td class="rn">5</td><td class="rname">Districts with 2-Year Continuous Growth</td><td class="rdesc">Districts with enrollment increase in both 2024-25 and 2025-26</td><td style="text-align:center"><span class="rcnt rcnt-ok">50</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('dist2yrGrowth')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="d2_3yr_growth"><td class="rn">6</td><td class="rname">Districts with 3-Year Continuous Growth</td><td class="rdesc">Districts growing consistently across all 3 year-pairs</td><td style="text-align:center"><span class="rcnt rcnt-ok">33</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('dist3yrGrowth')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="d2_2yr_decline"><td class="rn">7</td><td class="rname">Districts with 2-Year Continuous Decline</td><td class="rdesc">Districts declining in both 2024-25 and 2025-26</td><td style="text-align:center"><span class="rcnt rcnt-decl">9</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('dist2yrDecline')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="d2_3yr_decline"><td class="rn">8</td><td class="rname">Districts with 3-Year Continuous Decline &#11088;</td><td class="rdesc">Districts declining in all 3 consecutive year-pairs — most critical</td><td style="text-align:center"><span class="rcnt rcnt-decl">8</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('dist3yrDecline')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="d2_boys_decl"><td class="rn">9</td><td class="rname">Districts Where Boys Enrollment Declined</td><td class="rdesc">Districts with negative boys growth over 4 years</td><td style="text-align:center">—</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('distBoysDecl')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="d2_girls_decl"><td class="rn">10</td><td class="rname">Districts Where Girls Enrollment Declined</td><td class="rdesc">Districts with negative girls growth over 4 years</td><td style="text-align:center">—</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('distGirlsDecl')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="d2_both_decl"><td class="rn">11</td><td class="rname">Districts Where Both Boys &amp; Girls Declined</td><td class="rdesc">Districts with negative growth for both genders</td><td style="text-align:center"><span class="rcnt rcnt-decl">2</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('distBothDecl')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="d2_girls_up_boys_down"><td class="rn">12</td><td class="rname">Girls Improved but Boys Declined</td><td class="rdesc">Districts where girls grew but boys fell — gender divergence</td><td style="text-align:center"><span class="rcnt rcnt-info">4</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('distGirlsUpBoysDown')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="d2_volatility"><td class="rn">13</td><td class="rname">District Growth Volatility</td><td class="rdesc">Districts with unstable / fluctuating enrollment patterns</td><td style="text-align:center">75</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('distVolatility')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="d2_peak"><td class="rn">14</td><td class="rname">District Peak Year Analysis</td><td class="rdesc">Year with highest enrollment for each district</td><td style="text-align:center">—</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('distPeak')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="d2_recovery"><td class="rn">15</td><td class="rname">District Recovery (Decline then Growth)</td><td class="rdesc">Districts that declined in 2024-25 but recovered in 2025-26</td><td style="text-align:center"><span class="rcnt rcnt-ok">8</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('distRecovery')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="d2_gender_gap"><td class="rn">16</td><td class="rname">Gender Gap Districts (Boys-Heavy / Girls-Heavy)</td><td class="rdesc">Districts classified by girls ratio — Girls-Heavy (&gt;55%) or Boys-Heavy (&lt;45%) in 2025-26</td><td style="text-align:center"><span class="rcnt rcnt-info">75</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('distGenderGap')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="d2_all"><td class="rn">17</td><td class="rname">All Districts Summary (Live)</td><td class="rdesc">Full dashboard data for all 75 districts</td><td style="text-align:center"><span class="rcnt rcnt-info" id="rc-dist-all">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('allDists')">&#11123; Excel</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ LEVEL 3: BLOCK ═══ -->
+  <div class="rpt-level">
+    <div class="rpt-lhdr" style="background:linear-gradient(135deg,#E65100,#F57C00)">
+      &#128204; Level 3 — Block Level Reports
+      <span style="font-size:.75rem;font-weight:400;opacity:.85">Decline, growth, gender, risk, structural block analysis</span>
+    </div>
+    <table class="rpt-ltbl">
+      <thead><tr><th class="rn">#</th><th>Report Name</th><th>Description</th><th style="text-align:center">Records</th><th style="text-align:center">Download</th></tr></thead>
+      <tbody>
+        <tr data-rkey="b3_declined_yoy"><td class="rn">1</td><td class="rname">Blocks Where Enrollment Declined (YoY)</td><td class="rdesc">RED + ORANGE zone blocks from dashboard</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-blk-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('blocksDeclined')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="b3_2yr_decline"><td class="rn">2</td><td class="rname">Blocks with 2-Year Continuous Decline</td><td class="rdesc">Blocks declining in both 2024-25 and 2025-26</td><td style="text-align:center"><span class="rcnt rcnt-decl">119</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('blk2yrDecline')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="b3_3yr_decline"><td class="rn">3</td><td class="rname">Blocks with 3-Year Continuous Decline</td><td class="rdesc">Blocks with declining enrollment across all 3 year-pairs</td><td style="text-align:center"><span class="rcnt rcnt-decl">85</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('blk3yrDecline')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="b3_sharp_10"><td class="rn">4</td><td class="rname">Blocks with Sharp Decline (&gt;10%)</td><td class="rdesc">Blocks with more than 10% YoY enrollment drop in 2025-26</td><td style="text-align:center"><span class="rcnt rcnt-decl">70</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('blkSharp10')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="b3_increased"><td class="rn">5</td><td class="rname">Blocks Where Enrollment Increased</td><td class="rdesc">Blocks with positive YoY growth in 2025-26</td><td style="text-align:center"><span class="rcnt rcnt-ok">563</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('blkIncreased')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="b3_top30"><td class="rn">6</td><td class="rname">Top Performing Blocks</td><td class="rdesc">Top 30 blocks by 4-year enrollment growth</td><td style="text-align:center">30</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('blkTop30')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="b3_consistent_3yr"><td class="rn">7</td><td class="rname">Blocks with Consistent Growth (3 Years)</td><td class="rdesc">Blocks growing in all 3 consecutive year-pairs</td><td style="text-align:center"><span class="rcnt rcnt-ok">231</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('blkConsistent')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="b3_boys_decl"><td class="rn">8</td><td class="rname">Blocks Where Boys Declined</td><td class="rdesc">Blocks with negative boys enrollment growth (2022-26)</td><td style="text-align:center"><span class="rcnt rcnt-decl">269</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('blkBoysDecl')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="b3_girls_decl"><td class="rn">9</td><td class="rname">Blocks Where Girls Declined</td><td class="rdesc">Blocks with negative girls enrollment growth (2022-26)</td><td style="text-align:center"><span class="rcnt rcnt-decl">269</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('blkGirlsDecl')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="b3_gender_dom"><td class="rn">10</td><td class="rname">Gender Dominant Blocks</td><td class="rdesc">Boys-heavy vs Girls-heavy blocks by enrollment ratio</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/16_block_gender_dominance.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr data-rkey="b3_red"><td class="rn">11</td><td class="rname">Red Zone Blocks (Live)</td><td class="rdesc">All blocks in RED zone — highest risk</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-blk-health">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('blockHealth')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="b3_orange"><td class="rn">12</td><td class="rname">Orange Zone Blocks</td><td class="rdesc">Blocks in ORANGE zone — moderate decline risk</td><td style="text-align:center"><span class="rcnt rcnt-decl">84</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('blkOrange')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="b3_risk"><td class="rn">13</td><td class="rname">Block Risk Index</td><td class="rdesc">Full block health data — zone, growing/declining school counts</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/06_block_health.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr data-rkey="b3_small"><td class="rn">14</td><td class="rname">Small Schools Concentration Blocks</td><td class="rdesc">Blocks with high proportion of very small schools</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/19_block_small_schools.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr data-rkey="b3_cluster"><td class="rn">15</td><td class="rname">Block Cluster Patterns</td><td class="rdesc">Blocks grouped by similar enrollment behaviour patterns</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L3_BLOCK/10_cluster_pattern.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ LEVEL 4: SCHOOL ═══ -->
+  <div class="rpt-level">
+    <div class="rpt-lhdr" style="background:linear-gradient(135deg,#6A1B9A,#8E24AA)">
+      &#127979; Level 4 — School Level Reports &#128293;
+      <span style="font-size:.75rem;font-weight:400;opacity:.85">Most important — decline tracking, gender, risk, stability, alerts</span>
+    </div>
+    <table class="rpt-ltbl">
+      <thead><tr><th class="rn">#</th><th>Report Name</th><th>Description</th><th style="text-align:center">Records</th><th style="text-align:center">Download</th></tr></thead>
+      <tbody>
+        <tr data-rkey="s4_declined_yoy"><td class="rn">1</td><td class="rname">Schools Where Enrollment Declined (YoY)</td><td class="rdesc">Schools with decline in 2025-26 vs 2024-25</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-sch-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('schoolsDeclined')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s4_2yr_decline"><td class="rn">2</td><td class="rname">Schools with 2-Year Continuous Decline</td><td class="rdesc">Schools declining in both 2024-25 and 2025-26</td><td style="text-align:center"><span class="rcnt rcnt-decl">397</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('sch2yrDecline')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s4_3yr_decline"><td class="rn">3</td><td class="rname">Schools with 3-Year Continuous Decline &#11088;</td><td class="rdesc">Schools declining across all 3 year-pairs — most critical</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-3yr-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('threeYrDeclined')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s4_sharp_20"><td class="rn">4</td><td class="rname">Schools with Sharp Decline (&gt;20%)</td><td class="rdesc">Schools with more than 20% enrollment drop in 2025-26 vs 2024-25</td><td style="text-align:center"><span class="rcnt rcnt-decl">100</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('schSharp20')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s4_increased"><td class="rn">5</td><td class="rname">Schools Where Enrollment Increased</td><td class="rdesc">Schools with YoY growth in 2025-26</td><td style="text-align:center"><span class="rcnt rcnt-ok">1,633</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('schIncreased')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s4_top_growth"><td class="rn">6</td><td class="rname">Top Growth Schools</td><td class="rdesc">Schools ranked by highest 4-year overall growth</td><td style="text-align:center"><span class="rcnt rcnt-ok">1,414</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('schTopGrowth')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s4_recovery"><td class="rn">7</td><td class="rname">Recovery Schools (Decline then Growth)</td><td class="rdesc">Schools that previously declined but recovered</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L5_MASTER/recovery_schools.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr data-rkey="s4_boys_decl"><td class="rn">8</td><td class="rname">Schools Where Boys Declined</td><td class="rdesc">Schools with negative boys enrollment trend</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-boys-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('boysDeclined')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s4_girls_decl"><td class="rn">9</td><td class="rname">Schools Where Girls Declined</td><td class="rdesc">Schools with negative girls enrollment trend</td><td style="text-align:center"><span class="rcnt rcnt-decl" id="rc-girls-decl">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('girlsDeclined')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s4_both_decl"><td class="rn">10</td><td class="rname">Schools Where Both Declined</td><td class="rdesc">Schools with overall decline YoY and 4yr — both boys and girls</td><td style="text-align:center"><span class="rcnt rcnt-decl">529</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('schBothDecl')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s4_gender_gap"><td class="rn">11</td><td class="rname">Gender Gap Schools</td><td class="rdesc">Schools with high gender imbalance (girls ratio &gt;65% or &lt;35%)</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/03_gender_equity.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr data-rkey="s4_high_risk"><td class="rn">12</td><td class="rname">High Risk Schools</td><td class="rdesc">Schools with HIGH risk score — immediate attention needed</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/08_school_risk_index.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr data-rkey="s4_early_warn"><td class="rn">13</td><td class="rname">Early Warning Schools</td><td class="rdesc">Schools triggering early warning alerts</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/14_early_warning.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr data-rkey="s4_low50"><td class="rn">14</td><td class="rname">Low Enrollment Schools (&lt;50 students)</td><td class="rdesc">Schools with fewer than 50 students enrolled in 2025-26</td><td style="text-align:center"><span class="rcnt rcnt-decl">243</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('schLow50')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s4_stable"><td class="rn">15</td><td class="rname">Stable Schools</td><td class="rdesc">Schools with consistent, stable enrollment — low fluctuation</td><td style="text-align:center"><span class="rcnt rcnt-ok">240</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('schStable')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s4_volatile"><td class="rn">15b</td><td class="rname">Volatile Schools</td><td class="rdesc">Schools with high enrollment fluctuation — unpredictable pattern, needs monitoring</td><td style="text-align:center"><span class="rcnt rcnt-decl">1,252</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('schVolatile')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="s4_all"><td class="rn">16</td><td class="rname">All Schools Master Data (Live)</td><td class="rdesc">Complete data for all 2492 schools in the dashboard</td><td style="text-align:center"><span class="rcnt rcnt-info" id="rc-sch-all">—</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('allSchools')">&#11123; Excel</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ LEVEL 5: CROSS-CUTTING ═══ -->
+  <div class="rpt-level">
+    <div class="rpt-lhdr" style="background:linear-gradient(135deg,#00695C,#00897B)">
+      &#128279; Level 5 — Cross-cutting &amp; Data Quality Reports
+      <span style="font-size:.75rem;font-weight:400;opacity:.85">Transition, equity, category trends, data quality flags</span>
+    </div>
+    <table class="rpt-ltbl">
+      <thead><tr><th class="rn">#</th><th>Report Name</th><th>Description</th><th style="text-align:center">Records</th><th style="text-align:center">Download</th></tr></thead>
+      <tbody>
+        <tr data-rkey="x5_transition89"><td class="rn">1</td><td class="rname">Class 8 → 9 Transition (Continuity Index)</td><td class="rdesc">School-wise Class 8 to Class 9 enrollment continuity rate</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/04_continuity_index.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr data-rkey="x5_dropout"><td class="rn">2</td><td class="rname">Dropout Proxy Analysis</td><td class="rdesc">Schools showing indicators of potential dropout patterns</td><td style="text-align:center">—</td><td style="text-align:center"><a href="../outputs/L4_SCHOOL/05_dropout_proxy.csv" download class="btn-dl">&#11123; CSV</a></td></tr>
+        <tr data-rkey="x5_bpl_social"><td class="rn">3</td><td class="rname">BPL by Social Category Trend</td><td class="rdesc">BPL enrollment by SC/ST/OBC/General — district-wise, 2023-26</td><td style="text-align:center">2 sheets</td><td style="text-align:center"><a href="../reports/05_BPL_Social_Category_Trend.xlsx" download class="btn-dl">&#11123; Excel</a></td></tr>
+        <tr data-rkey="x5_spike_drop"><td class="rn">4</td><td class="rname">Sudden Spike / Drop Schools</td><td class="rdesc">Schools with &gt;30% enrollment change in any single year</td><td style="text-align:center"><span class="rcnt rcnt-decl">960</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('spikeDropSchools')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="x5_missing"><td class="rn">5</td><td class="rname">Missing Data Schools</td><td class="rdesc">Schools with zero enrollment in some years but data in others</td><td style="text-align:center"><span class="rcnt rcnt-decl">121</span></td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('missingDataSchools')">&#11123; Excel</button></td></tr>
+        <tr data-rkey="x5_gender_gap_sch"><td class="rn">6</td><td class="rname">Gender Gap Schools (High Imbalance)</td><td class="rdesc">Schools with &gt;65% or &lt;35% girls ratio — high gender concentration</td><td style="text-align:center">—</td><td style="text-align:center"><button class="btn-dl dyn" onclick="dlXLSec('genderGapSchools')">&#11123; Excel</button></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<!-- School Detail Modal -->
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div><h2 id="modal-name">—</h2><p id="modal-loc">—</p></div>
+      <button class="modal-close" onclick="closeModal()">&#215;</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// GLOBALS
+// ═══════════════════════════════════════════════════════════
+window.dashboardData = null;
+window.activeFilters = {district:'',block:'',schoolType:'',zone:'',year:''};
+window.charts = {};
+window.pgState = {};   // {key:{page,size,data}}
+window.pgRender = {};  // {key:renderFn}
+window.xlData = {};    // named datasets for excel export
+window.sortStates = {};
+
+Chart.defaults.font.size = 11;
+Chart.defaults.plugins.legend.labels.boxWidth = 12;
+
+const YRMAP = {'2022-23':'Enroll_2223','2023-24':'Enroll_2324','2024-25':'Enroll_2425','2025-26':'Enroll_2526'};
+const YRCOLS = ['2022-23','2023-24','2024-25','2025-26'];
+const TREND_COLORS = {
+  'Consistent Growth':'#4CAF50','Consistent Decline':'#F44336',
+  'Recovery':'#2196F3','Peaked':'#FF9800','Stable':'#9E9E9E','Volatile':'#9C27B0'
+};
+
+// ═══════════════════════════════════════════════════════════
+// FORMATTERS
+// ═══════════════════════════════════════════════════════════
+function fmtN(n){
+  if(n==null||n===''||isNaN(n)) return '—';
+  return new Intl.NumberFormat('en-IN').format(Math.round(parseFloat(n)));
+}
+function fmtP(n,dec=1){
+  if(n==null||isNaN(n)) return '—';
+  const v=parseFloat(n);
+  return (v>=0?'+':'')+v.toFixed(dec)+'%';
+}
+function fmtG(n,dec=1){
+  if(n==null||isNaN(n)) return '—';
+  const v=parseFloat(n);
+  return (v>=0?'▲':'▼')+Math.abs(v).toFixed(dec)+'%';
+}
+function clrG(n){
+  const v=parseFloat(n);
+  return isNaN(v)?'':(v>0?'pos':'neg');
+}
+function healthBadge(tag){
+  if(!tag) return '<span class="badge b-grey">—</span>';
+  const map={'IMPROVING':'b-success','STABLE':'b-info','DECLINING':'b-danger','AT RISK':'b-red','CRITICAL':'b-red','GOOD':'b-success'};
+  const key=Object.keys(map).find(k=>tag.toUpperCase().includes(k))||'';
+  return `<span class="badge ${map[key]||'b-grey'}">${tag}</span>`;
+}
+function zoneBadge(z){
+  const c={RED:'b-red',ORANGE:'b-orange',YELLOW:'b-yellow',GREEN:'b-green'};
+  return z?`<span class="badge ${c[z]||'b-grey'}">${z}</span>`:'<span class="badge b-grey">—</span>';
+}
+function riskBadge(r){
+  const c={HIGH:'b-danger',MEDIUM:'b-warning',LOW:'b-success'};
+  return r?`<span class="badge ${c[r]||'b-grey'}">${r}</span>`:'<span class="badge b-grey">—</span>';
+}
+function schoolFlags(s){
+  let f='';
+  if((s.Risk_Level||'').toUpperCase()==='HIGH') f+=`<span class="flag f-risk">HIGH RISK</span>`;
+  if(String(s.Model_School_Flag).toLowerCase()==='true') f+=`<span class="flag f-model">MODEL</span>`;
+  if(parseFloat(s.Alert_Count||0)>0) f+=`<span class="flag f-alert">ALERT</span>`;
+  if(parseFloat(s.Overall_Growth_pct||0)<0) f+=`<span class="flag f-decline">DECLINING</span>`;
+  if(parseFloat(s.Girls_Ratio_2526||0)>55) f+=`<span class="flag f-girls">GIRLS</span>`;
+  return f||'—';
+}
+
+// ═══════════════════════════════════════════════════════════
+// CHART HELPER
+// ═══════════════════════════════════════════════════════════
+function mkChart(id, cfg){
+  if(window.charts[id]) window.charts[id].destroy();
+  const el=document.getElementById(id);
+  if(!el) return;
+  window.charts[id]=new Chart(el, cfg);
+}
+
+// ═══════════════════════════════════════════════════════════
+// PAGINATION
+// ═══════════════════════════════════════════════════════════
+function initPg(key,data,size=25,renderFn){
+  window.pgState[key]={page:0,size,data:[...data]};
+  window.pgRender[key]=renderFn;
+}
+function pg(key,d){
+  const s=window.pgState[key];
+  if(!s) return;
+  s.page+=d;
+  window.pgRender[key]();
+}
+function pgRows(key){
+  const s=window.pgState[key];
+  const start=s.page*s.size;
+  return {rows:s.data.slice(start,start+s.size),total:s.data.length,page:s.page,size:s.size,start};
+}
+function pgCtrl(key,infoId,prevId,nextId){
+  const s=window.pgState[key];
+  const pages=Math.ceil(s.data.length/s.size);
+  const info=document.getElementById(infoId);
+  if(info){
+    const start=s.page*s.size+1,end=Math.min((s.page+1)*s.size,s.data.length);
+    info.textContent=s.data.length===0?'No records':`Showing ${start}–${end} of ${s.data.length}`;
+  }
+  const prev=document.getElementById(prevId);
+  const next=document.getElementById(nextId);
+  if(prev) prev.disabled=s.page===0;
+  if(next) next.disabled=s.page>=pages-1;
+}
+
+// ═══════════════════════════════════════════════════════════
+// TABLE SORT
+// ═══════════════════════════════════════════════════════════
+function sortTbl(id,col,type){
+  const tbl=document.getElementById(id);
+  if(!tbl) return;
+  const key=id+'_'+col;
+  const asc=window.sortStates[key]===1?-1:1;
+  window.sortStates[key]=asc;
+  const ths=tbl.querySelectorAll('thead th');
+  ths.forEach((th,i)=>{th.classList.remove('asc','desc');});
+  ths[col].classList.add(asc===1?'asc':'desc');
+  const tbody=tbl.querySelector('tbody');
+  const rows=[...tbody.querySelectorAll('tr')];
+  rows.sort((a,b)=>{
+    const av=a.cells[col]?a.cells[col].textContent.trim():'';
+    const bv=b.cells[col]?b.cells[col].textContent.trim():'';
+    if(type==='num'){
+      const an=parseFloat(av.replace(/[^0-9.\-]/g,''))||0;
+      const bn=parseFloat(bv.replace(/[^0-9.\-]/g,''))||0;
+      return asc*(an-bn);
+    }
+    return asc*av.localeCompare(bv);
+  });
+  rows.forEach(r=>tbody.appendChild(r));
+}
+
+// ═══════════════════════════════════════════════════════════
+// FILTER HELPERS
+// ═══════════════════════════════════════════════════════════
+function getSchools(){
+  const D=window.dashboardData;
+  if(!D) return [];
+  let schools=[...D.all_schools||[]];
+  const {district,block,schoolType,zone}=window.activeFilters;
+  if(district) schools=schools.filter(s=>(s.district||s.District||'')===district);
+  if(block) schools=schools.filter(s=>(s.block||s.Block||'')===block);
+  if(schoolType) schools=schools.filter(s=>(s.School_Type||'')===schoolType);
+  if(zone){
+    const blockZone=getBlockZoneMap();
+    schools=schools.filter(s=>{
+      const dist=s.district||s.District||'';
+      const blk=s.block||s.Block||'';
+      return blockZone[dist+'|'+blk]===zone;
+    });
+  }
+  return schools;
+}
+function getBlocks(){
+  const D=window.dashboardData;
+  if(!D) return [];
+  let blocks=[...D.block_health||[]];
+  const {district,zone}=window.activeFilters;
+  if(district) blocks=blocks.filter(b=>(b.District||'')===district);
+  if(zone) blocks=blocks.filter(b=>(b.Block_Zone||'')===zone);
+  return blocks;
+}
+function getBlockZoneMap(){
+  const D=window.dashboardData;
+  const map={};
+  (D.block_health||[]).forEach(b=>{
+    map[(b.District||'')+'|'+(b.Block||'')]=(b.Block_Zone||'');
+  });
+  return map;
+}
+
+function onDistrictChange(){
+  const dist=document.getElementById('f-district').value;
+  window.activeFilters.district=dist;
+  const D=window.dashboardData;
+  const blockSel=document.getElementById('f-block');
+  if(blockSel){
+    blockSel.innerHTML='<option value="">All Blocks</option>';
+    if(dist&&D.filter_options&&D.filter_options.blocks&&D.filter_options.blocks[dist]){
+      D.filter_options.blocks[dist].forEach(b=>{
+        blockSel.innerHTML+=`<option value="${b}">${b}</option>`;
+      });
+    }
+  }
+  const loadEl=document.getElementById('dist-loading');
+  if(loadEl) loadEl.style.display='inline-flex';
+  setTimeout(()=>{
+    applyFilters();
+    if(loadEl) loadEl.style.display='none';
+  },0);
+}
+function applyFilters(){
+  const dEl=document.getElementById('f-district');
+  const bEl=document.getElementById('f-block');
+  const yEl=document.getElementById('f-year');
+  if(dEl) window.activeFilters.district=dEl.value;
+  if(bEl) window.activeFilters.block=bEl.value;
+  if(yEl) window.activeFilters.year=yEl.value;
+  renderActiveTab();
+}
+function resetFilters(){
+  const dEl=document.getElementById('f-district');
+  const bEl=document.getElementById('f-block');
+  const yEl=document.getElementById('f-year');
+  if(dEl) dEl.value='';
+  if(bEl){bEl.value='';bEl.innerHTML='<option value="">All Blocks</option>';}
+  if(yEl) yEl.value='';
+  window.activeFilters={district:'',block:'',schoolType:'',zone:'',year:''};
+  renderActiveTab();
+}
+
+// ═══════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════════════════
+function switchTab(name){
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tpane').forEach(p=>p.classList.remove('active'));
+  const btn=document.querySelector(`.tbtn[data-tab="${name}"]`);
+  const pane=document.getElementById('tab-'+name);
+  if(btn) btn.classList.add('active');
+  if(pane) pane.classList.add('active');
+  renderTab(name);
+}
+function renderActiveTab(){
+  const active=document.querySelector('.tbtn.active');
+  if(active) renderTab(active.dataset.tab);
+}
+function renderTab(name){
+  switch(name){
+    case 'overview':   renderOverview();   break;
+    case 'districts':  renderDistricts();  break;
+    case 'blocks':     renderBlocks();     break;
+    case 'schools':    renderSchools();    break;
+    case 'report':     renderReport();     break;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// TAB 1: STATE OVERVIEW — HELPERS
+// ═══════════════════════════════════════════════════════════
+function goToTab(tabName, filterKey, filterValue){
+  switchTab(tabName);
+  if(filterKey&&filterValue){
+    if(filterKey==='zone'||filterKey==='schoolType'){
+      window.activeFilters[filterKey]=filterValue;
+      renderActiveTab();
+    } else {
+      const map={district:'f-district',block:'f-block',year:'f-year'};
+      const el=document.getElementById(map[filterKey]);
+      if(el){
+        el.value=filterValue;
+        if(filterKey==='district') onDistrictChange();
+        else applyFilters();
+      }
+    }
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function dlChartPng(chartId,filename){
+  const ch=window.charts[chartId];
+  if(!ch){alert('Chart not ready');return;}
+  const a=document.createElement('a');
+  a.download=(filename||chartId)+'.png';
+  a.href=ch.toBase64Image();
+  a.click();
+}
+function dlExcel(data,filename){
+  if(!window.XLSX){alert('SheetJS not loaded');return;}
+  if(!data||!data.length){alert('No data');return;}
+  dlXLData(data,filename);
+}
+function dlBoysDecl(){dlExcel(window._boysDecl,'boys_declining_districts');}
+function dlGirlsDecl(){dlExcel(window._girlsDecl,'girls_declining_districts');}
+
+function renderOverview(){
+  const D=window.dashboardData;
+  const kpi=D.state_kpis||{};
+  const schools=getSchools();
+  const yr=window.activeFilters.year;
+
+  // KPI Cards — same 5 cards always, values update by year
+  const kpiEl=document.getElementById('ov-kpi-row');
+  const displayYr=yr||'2025-26';
+  const col=YRMAP[displayYr]||'Enroll_2526';
+  const prevYrIdx=YRCOLS.indexOf(displayYr)-1;
+  const prevCol=prevYrIdx>=0?YRMAP[YRCOLS[prevYrIdx]]:null;
+  const total=schools.reduce((s,sc)=>s+(parseFloat(sc[col])||0),0);
+  const prevTotal=prevCol?schools.reduce((s,sc)=>s+(parseFloat(sc[prevCol])||0),0):parseFloat(kpi.Total_Enrollment_2223||0);
+  const chgPct=prevTotal>0?((total-prevTotal)/prevTotal*100):null;
+  const cards=[
+    {label:'Total Schools',val:fmtN(kpi.Total_Schools),sub:`Filtered: ${fmtN(schools.length)}`,cls:'primary',fn:"goToTab('schools')"},
+    {label:`Enrollment ${displayYr}`,val:fmtN(total),sub:`Base: ${fmtN(prevTotal)}`,cls:'secondary',fn:''},
+    {label:'Growth',val:chgPct!=null?fmtP(chgPct):'—',sub:'vs previous year',cls:chgPct!=null&&chgPct>=0?'success':'danger',fn:''},
+    {label:'High Risk Schools',val:fmtN(kpi.High_Risk_Schools),sub:`${fmtN(kpi.Medium_Risk_Schools)} Medium Risk`,cls:'danger',fn:"goToTab('schools')"},
+    {label:'RED Zone Blocks',val:fmtN(kpi.Red_Zone_Blocks),sub:`of ${fmtN(kpi.Total_Blocks)} blocks`,cls:'danger',fn:"goToTab('blocks','zone','RED')"},
+  ];
+  kpiEl.innerHTML=cards.map(c=>`<div class="kpi ${c.cls}" ${c.fn?`style="cursor:pointer" onclick="${c.fn}"`:''}>
+    <div class="kpi-lbl">${c.label}</div><div class="kpi-val">${c.val}</div><div class="kpi-sub">${c.sub}</div>
+  </div>`).join('');
+  const footerEl=document.getElementById('dash-footer');
+  if(footerEl) footerEl.innerHTML=`&#127979; <strong>${fmtN(kpi.Model_Schools)||'—'} Model Schools</strong> &nbsp;|&nbsp; top performing schools across the state`;
+
+  // Year cards — always visible
+  const yrEl=document.getElementById('ov-year-cards');
+  const trend=D.enrollment_trend||[];
+  yrEl.innerHTML=trend.map((r,i,arr)=>{
+    const allTrend=D.enrollment_trend||[];
+    const globalIdx=allTrend.findIndex(x=>x.year===r.year);
+    const prev=globalIdx>0?allTrend[globalIdx-1].total:null;
+    const chg=prev?((r.total-prev)/prev*100):null;
+    const isSelected=r.year===displayYr;
+    const chgHtml=chg!=null?`<div class="yc-chg ${chg>=0?'pos':'neg'}">${fmtG(chg)}</div>`:'<div class="yc-chg" style="color:#aaa">Base year</div>';
+    return `<div class="yr-card" style="cursor:pointer;${isSelected?'border-top-color:var(--primary);box-shadow:0 4px 14px rgba(0,0,0,.14)':''}" onclick="document.getElementById('f-year').value='${r.year}';applyFilters()">
+      <div class="yc-yr">${r.year}</div><div class="yc-val">${fmtN(r.total)}</div><div class="yc-sub">total enrollment</div>${chgHtml}
+    </div>`;
+  }).join('');
+
+  // Main content — always show full overview (year filter only updates KPI values)
+  const main=document.getElementById('ov-main-content');
+  renderOverviewAll(main, schools, kpi, D);
+}
+
+function renderOverviewAll(el, schools, kpi, D){
+  const dists=[...D.district_data||[]];
+  const bh=D.block_health||[];
+  const z=D.zone_summary||{};
+  const trend=D.enrollment_trend||[];
+  const stData=D.school_type_data||[];
+
+  const boysDecl=[...dists].filter(d=>parseFloat(d.Boys_Growth_pct||0)<0)
+    .sort((a,b)=>parseFloat(a.Boys_Growth_pct||0)-parseFloat(b.Boys_Growth_pct||0));
+  const girlsDecl=[...dists].filter(d=>parseFloat(d.Girls_Growth_pct||0)<0)
+    .sort((a,b)=>parseFloat(a.Girls_Growth_pct||0)-parseFloat(b.Girls_Growth_pct||0));
+
+  const distGrowing=dists.filter(d=>parseFloat(d.Overall_Growth_pct||0)>0).length;
+  const distDeclining=dists.filter(d=>parseFloat(d.Overall_Growth_pct||0)<0).length;
+  const schGrowing=schools.filter(s=>parseFloat(s.Overall_Growth_pct||0)>0).length;
+  const schDeclining=schools.filter(s=>parseFloat(s.Overall_Growth_pct||0)<0).length;
+
+  window._boysDecl=boysDecl; window._girlsDecl=girlsDecl;
+
+  el.innerHTML=`
+    <!-- S2: Trend + Health Summary -->
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">Enrollment Trend 2022–26
+          <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-trend','enrollment_trend')">&#128444; PNG</button>
+        </div>
+        <div class="ch-wrap" style="height:220px"><canvas id="c-trend"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Schools vs Enrollment by Year
+          <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-schools-enroll','schools_vs_enrollment')">&#128444; PNG</button>
+        </div>
+        <div class="ch-wrap" style="height:220px"><canvas id="c-schools-enroll"></canvas></div>
+      </div>
+    </div>
+
+    <!-- S2.5: Boys vs Girls Enrollment by Year -->
+    <div class="card">
+      <div class="card-title">&#128104; Boys vs &#128105; Girls Enrollment by Year
+        <button class="btn btn-outline" style="font-size:.65rem;padding:2px 6px" onclick="dlChartPng('c-gender-yr','boys_girls_by_year')">&#128444; PNG</button>
+      </div>
+      <div class="ch-wrap" style="height:240px"><canvas id="c-gender-yr"></canvas></div>
+    </div>
+
+    <!-- S4: School Type Cards -->
+    <div class="card" style="background:#fff;padding:18px 20px">
+      <div class="card-title">Enrollment by School Type</div>
+      <div id="stype-ov-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding-top:4px"></div>
+      <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
+        <div style="font-size:.72rem;font-weight:700;color:var(--primary);margin-bottom:8px">Class Transition Rate — 10&#8594;11 &amp; 11&#8594;12 (Year-wise Average %)</div>
+        <div class="ch-wrap" style="height:180px"><canvas id="c-transition"></canvas></div>
+      </div>
+    </div>
+
+    <!-- S5: Category-wise Enrollment Trends -->
+    <div class="card" style="margin-top:14px">
+      <div class="g2" style="margin-bottom:14px">
+        <div>
+          <div style="font-size:.72rem;font-weight:700;color:var(--primary);margin-bottom:8px">BPL Enrollment Trend</div>
+          <div class="ch-wrap" style="height:200px"><canvas id="c-cat-bpl"></canvas></div>
+        </div>
+        <div>
+          <div style="font-size:.72rem;font-weight:700;color:var(--primary);margin-bottom:8px">Social Category Breakdown</div>
+          <div class="ch-wrap" style="height:200px"><canvas id="c-cat-social"></canvas></div>
+        </div>
+      </div>
+      <div class="g2">
+        <div>
+          <div style="font-size:.72rem;font-weight:700;color:var(--primary);margin-bottom:8px">MOI — Hindi vs Non-Hindi</div>
+          <div class="ch-wrap" style="height:200px"><canvas id="c-cat-moi"></canvas></div>
+        </div>
+        <div>
+          <div style="font-size:.72rem;font-weight:700;color:var(--primary);margin-bottom:8px">Muslim Minority Trend</div>
+          <div class="ch-wrap" style="height:200px"><canvas id="c-cat-muslim"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    `;
+
+  // ── Trend chart ──
+  mkChart('c-trend',{type:'line',data:{
+    labels:trend.map(r=>r.year),
+    datasets:[{label:'Enrollment',data:trend.map(r=>r.total),
+      borderColor:'#2196F3',backgroundColor:'rgba(33,150,243,.12)',
+      borderWidth:2.5,pointRadius:6,pointBackgroundColor:'#2196F3',fill:true,tension:.3}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.raw)}}},
+    scales:{y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},x:{grid:{display:false}}}
+  }});
+
+
+  // ── Schools vs Enrollment Clustered Column Chart ──
+  const yrLabels=['2022-23','2023-24','2024-25','2025-26'];
+  const schCountsByYr=yrLabels.map(yr=>{
+    const col=YRMAP[yr];
+    return schools.filter(s=>parseFloat(s[col]||0)>0).length;
+  });
+  const enrollByYr=yrLabels.map(yr=>{
+    const found=trend.find(r=>r.year===yr);
+    return found?found.total:0;
+  });
+  mkChart('c-schools-enroll',{type:'bar',data:{
+    labels:yrLabels,
+    datasets:[
+      {label:'No. of Schools',data:schCountsByYr,backgroundColor:'rgba(33,150,243,.8)',borderRadius:3,yAxisID:'yS'},
+      {label:'Enrollment',data:enrollByYr,backgroundColor:'rgba(76,175,80,.8)',borderRadius:3,yAxisID:'yE'}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:12,padding:8}},
+      tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmtN(c.raw)}`}}},
+    scales:{
+      yS:{type:'linear',position:'left',title:{display:true,text:'Schools',font:{size:9}},ticks:{font:{size:9}},grid:{color:'#f0f4f8'}},
+      yE:{type:'linear',position:'right',title:{display:true,text:'Enrollment',font:{size:9}},ticks:{callback:v=>(v/1000).toFixed(0)+'K',font:{size:9}},grid:{display:false}},
+      x:{ticks:{font:{size:10}},grid:{display:false}}
+    }
+  }});
+
+  // ── Boys vs Girls Enrollment by Year Chart ──
+  const hgData=D.heatmap_gender||[];
+  const girlsRatioByYr={};
+  hgData.forEach(r=>{
+    const yr=r.Year||r.year;
+    if(!girlsRatioByYr[yr]){girlsRatioByYr[yr]={sum:0,cnt:0};}
+    girlsRatioByYr[yr].sum+=parseFloat(r.Avg_Girls_Ratio||0);
+    girlsRatioByYr[yr].cnt++;
+  });
+  const yrTotals={'2022-23':parseFloat(kpi.Total_Enrollment_2223||0),'2023-24':parseFloat(kpi.Total_Enrollment_2324||0),'2024-25':parseFloat(kpi.Total_Enrollment_2425||0),'2025-26':parseFloat(kpi.Total_Enrollment_2526||0)};
+  const gyrLabels=['2022-23','2023-24','2024-25','2025-26'];
+  const girlsEnrollYr=gyrLabels.map(yr=>{
+    const ratio=girlsRatioByYr[yr]?girlsRatioByYr[yr].sum/girlsRatioByYr[yr].cnt:0.58;
+    return Math.round((yrTotals[yr]||0)*ratio);
+  });
+  const boysEnrollYr=gyrLabels.map((yr,i)=>Math.round((yrTotals[yr]||0)-girlsEnrollYr[i]));
+  mkChart('c-gender-yr',{type:'bar',data:{
+    labels:gyrLabels,
+    datasets:[
+      {label:'Boys Enrollment',data:boysEnrollYr,backgroundColor:'rgba(33,150,243,.85)',borderRadius:4},
+      {label:'Girls Enrollment',data:girlsEnrollYr,backgroundColor:'rgba(233,30,99,.8)',borderRadius:4}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:14,padding:10}},
+      tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmtN(c.raw)}`}}},
+    scales:{
+      y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K',font:{size:10}},grid:{color:'#f0f4f8'},title:{display:true,text:'Enrollment',font:{size:10}}},
+      x:{ticks:{font:{size:11}},grid:{display:false}}
+    }
+  }});
+
+  // ── School Type Cards ──
+  const stypeColors={'Full School (1-12)':'#C0392B','Sr Secondary (9-12)':'#1B7A3E','Middle to Higher (6-12)':'#1B7A3E','Mid to Secondary (6-10)':'#1B7A3E','Secondary Only (9-10)':'#1B7A3E'};
+  const stypeEl=document.getElementById('stype-ov-cards');
+  const stArr=stData.length?stData:Object.values(schools.reduce((m,s)=>{
+    const t=s.School_Type||'Unknown';
+    if(!m[t]) m[t]={School_Type:t,count:0,e2223:0,e2526:0,growing:0,declining:0};
+    m[t].count++;m[t].e2223+=parseFloat(s.Enroll_2223||0);m[t].e2526+=parseFloat(s.Enroll_2526||0);
+    if(parseFloat(s.Overall_Growth_pct||0)>0) m[t].growing++;
+    else if(parseFloat(s.Overall_Growth_pct||0)<0) m[t].declining++;
+    return m;
+  },{}));
+  stypeEl.innerHTML=stArr.map(t=>{
+    const cnt=parseInt(t.Total_Schools||t.count||0);
+    const g=parseFloat(t.Overall_Growth_pct||t.Growth_pct||(t.e2223>0?((t.e2526-t.e2223)/t.e2223*100):0));
+    const grw=parseInt(t.Growing_Schools||t.growing||0);
+    const dcl=parseInt(t.Declining_Schools||t.declining||0);
+    const growPct=cnt?(grw/cnt*100):0;
+    const dclPct=cnt?(dcl/cnt*100):0;
+    const borderCol=g>=0?'#1B7A3E':'#C0392B';
+    const enroll=parseInt(t.Total_Enrollment_2526||t.e2526||0);
+    return `<div onclick="goToTab('schooltype')" style="border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:22px 24px;border-top:4px solid ${borderCol};cursor:pointer;background:#fff" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.14)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(0,0,0,.08)'">
+      <div style="font-size:.8rem;font-weight:700;color:var(--primary);margin-bottom:8px">${t.School_Type||t.type||'—'}</div>
+      <div style="display:flex;gap:16px;margin-bottom:10px">
+        <div><div style="font-size:.65rem;color:var(--text-muted)">Schools</div><div style="font-size:1.2rem;font-weight:700;color:var(--primary)">${fmtN(cnt)}</div></div>
+        ${enroll?`<div><div style="font-size:.65rem;color:var(--text-muted)">Enrollment</div><div style="font-size:1.2rem;font-weight:700;color:var(--primary)">${fmtN(enroll)}</div></div>`:''}
+        <div><div style="font-size:.65rem;color:var(--text-muted)">Growth</div><div style="font-size:1.2rem;font-weight:700;color:${borderCol}">${g>=0?'▲':'▼'}${Math.abs(g).toFixed(1)}%</div></div>
+      </div>
+      <div style="font-size:.7rem;color:#888;margin-bottom:4px">Growing: <strong>${growPct.toFixed(0)}%</strong></div>
+      <div style="background:#eee;border-radius:4px;height:7px;margin-bottom:8px"><div style="width:${Math.min(growPct,100)}%;background:#1B7A3E;height:7px;border-radius:4px"></div></div>
+      <div style="font-size:.7rem;color:#888;margin-bottom:4px">Declining: <strong>${dclPct.toFixed(0)}%</strong></div>
+      <div style="background:#eee;border-radius:4px;height:7px"><div style="width:${Math.min(dclPct,100)}%;background:#C0392B;height:7px;border-radius:4px"></div></div>
+    </div>`;
+  }).join('');
+
+  // ── Class Transition Rate Chart (9→10, 10→11, 11→12) ──
+  // Note: 9→10 avg is ~570% (Govt schools receive private students at Class 9)
+  // 11→12 avg is ~103.5% (similar intake pattern). Only 10→11 is a true retention rate.
+  // Showing all 3 year-wise for 10→11; current-year bars for 9→10 & 11→12.
+  mkChart('c-transition',{type:'bar',data:{
+    labels:['2022-23','2023-24','2024-25','2025-26'],
+    datasets:[
+      {
+        label:'Class 10\u219211 Retention %',
+        data:[50.7,63.5,66.6,59.3],
+        backgroundColor:['rgba(244,67,54,.85)','rgba(255,152,0,.85)','rgba(76,175,80,.9)','rgba(33,150,243,.9)'],
+        borderRadius:5,
+        barPercentage:.55,
+        order:1
+      },
+      {
+        label:'Class 11\u219212 Avg % (2025-26)',
+        data:[null,null,null,103.5],
+        backgroundColor:'rgba(156,39,176,.7)',
+        borderRadius:5,
+        barPercentage:.55,
+        order:2
+      }
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'bottom',labels:{font:{size:9},boxWidth:10,padding:8}},
+      tooltip:{callbacks:{label:c=>c.raw!=null?` ${c.dataset.label}: ${c.raw}%`:' No year-wise data available'}}
+    },
+    scales:{
+      y:{min:0,max:120,ticks:{callback:v=>v+'%',font:{size:9}},grid:{color:'#f0f4f8'},title:{display:true,text:'Avg %',font:{size:9}}},
+      x:{ticks:{font:{size:9}},grid:{display:false}}
+    }
+  }});
+
+  // ── Category Trend Charts ──
+  const catYrs=['2022-23','2023-24','2024-25','2025-26'];
+
+  mkChart('c-cat-bpl',{type:'line',data:{
+    labels:catYrs,
+    datasets:[{label:'BPL Students',data:[192541,227205,281040,324707],
+      borderColor:'#FF9800',backgroundColor:'rgba(255,152,0,.13)',
+      borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#FF9800',fill:true,tension:.3}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.raw)}}},
+    scales:{y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K',font:{size:9}},grid:{color:'#f0f4f8'}},x:{ticks:{font:{size:10}},grid:{display:false}}}
+  }});
+
+  mkChart('c-cat-social',{type:'bar',data:{
+    labels:catYrs,
+    datasets:[
+      {label:'OBC', data:[355450,352462,365233,372717],backgroundColor:'rgba(33,150,243,.85)',borderRadius:3},
+      {label:'SC',  data:[175505,175766,184459,192648],backgroundColor:'rgba(76,175,80,.85)',borderRadius:3},
+      {label:'General',data:[99123,94161,94196,91424],backgroundColor:'rgba(156,39,176,.8)',borderRadius:3},
+      {label:'ST',  data:[9487,8848,8216,8530],backgroundColor:'rgba(244,67,54,.8)',borderRadius:3}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10,padding:6}},
+      tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmtN(c.raw)}`}}},
+    scales:{x:{stacked:true,ticks:{font:{size:10}},grid:{display:false}},y:{stacked:true,ticks:{callback:v=>(v/1000).toFixed(0)+'K',font:{size:9}},grid:{color:'#f0f4f8'}}}
+  }});
+
+  mkChart('c-cat-moi',{type:'bar',data:{
+    labels:catYrs,
+    datasets:[
+      {label:'Hindi',     data:[625208,618764,640900,661776],backgroundColor:'rgba(33,150,243,.85)',borderRadius:3},
+      {label:'Non-Hindi', data:[14278,12473,11204,12211],backgroundColor:'rgba(244,67,54,.8)',borderRadius:3}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10,padding:6}},
+      tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${fmtN(c.raw)}`}}},
+    scales:{x:{stacked:true,ticks:{font:{size:10}},grid:{display:false}},y:{stacked:true,ticks:{callback:v=>(v/1000).toFixed(0)+'K',font:{size:9}},grid:{color:'#f0f4f8'}}}
+  }});
+
+  mkChart('c-cat-muslim',{type:'line',data:{
+    labels:catYrs,
+    datasets:[{label:'Muslim Students',data:[96227,95955,100572,102666],
+      borderColor:'#4CAF50',backgroundColor:'rgba(76,175,80,.12)',
+      borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#4CAF50',fill:true,tension:.3}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.raw)}}},
+    scales:{y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K',font:{size:9}},grid:{color:'#f0f4f8'}},x:{ticks:{font:{size:10}},grid:{display:false}}}
+  }});
+
+  // ── Block Tables ──
+}
+
+function renderOverviewYear(el, schools, yr){
+  const col=YRMAP[yr]||'Enroll_2526';
+  const D=window.dashboardData;
+  // Aggregate by district
+  const distMap={};
+  schools.forEach(s=>{
+    const dist=s.district||s.District||'';
+    if(!distMap[dist]) distMap[dist]={District:dist,enroll:0,count:0};
+    distMap[dist].enroll+=(parseFloat(s[col])||0);
+    distMap[dist].count++;
+  });
+  const distArr=Object.values(distMap).sort((a,b)=>b.enroll-a.enroll);
+  const top10=distArr.slice(0,10);
+
+  // By block
+  const blkMap={};
+  schools.forEach(s=>{
+    const blk=(s.block||s.Block||'');
+    const dist=s.district||s.District||'';
+    if(!blkMap[blk]) blkMap[blk]={block:blk,dist,enroll:0};
+    blkMap[blk].enroll+=(parseFloat(s[col])||0);
+  });
+  const blkArr=Object.values(blkMap).sort((a,b)=>b.enroll-a.enroll).slice(0,10);
+
+  // By school type
+  const stMap={};
+  schools.forEach(s=>{const t=s.School_Type||'Unknown';if(!stMap[t])stMap[t]=0;stMap[t]+=(parseFloat(s[col])||0);});
+  const stKeys=Object.keys(stMap);
+
+  el.innerHTML=`
+    <div class="card"><div class="card-title">Top Districts in ${yr}</div><div class="ch-wrap" style="height:260px"><canvas id="c-yr-dist"></canvas></div></div>
+    <div class="card"><div class="card-title">Top Blocks in ${yr}</div><div class="ch-wrap" style="height:260px"><canvas id="c-yr-blk"></canvas></div></div>
+    <div class="card"><div class="card-title">Enrollment by School Type in ${yr}</div><div class="ch-wrap" style="height:260px"><canvas id="c-yr-stype"></canvas></div></div>`;
+
+  mkChart('c-yr-dist',{type:'bar',data:{
+    labels:top10.map(d=>d.District),
+    datasets:[{label:'Enrollment',data:top10.map(d=>d.enroll),backgroundColor:'rgba(33,150,243,.8)',borderRadius:4,barThickness:18}]
+  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fmtN(c.raw)}`}}},
+    scales:{x:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},y:{ticks:{font:{size:11}}}}
+  }});
+
+  mkChart('c-yr-blk',{type:'bar',data:{
+    labels:blkArr.map(b=>b.block),
+    datasets:[{label:'Enrollment',data:blkArr.map(b=>b.enroll),backgroundColor:'rgba(76,175,80,.8)',borderRadius:4,barThickness:18}]
+  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fmtN(c.raw)}`}}},
+    scales:{x:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},y:{ticks:{font:{size:11}}}}
+  }});
+
+  mkChart('c-yr-stype',{type:'doughnut',data:{
+    labels:stKeys,
+    datasets:[{data:stKeys.map(k=>stMap[k]),backgroundColor:['#2196F3','#4CAF50','#FF9800','#F44336','#9C27B0','#00BCD4'],borderWidth:2}]
+  },options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
+    plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>` ${c.label}: ${fmtN(c.raw)} (${((c.raw/stKeys.map(k=>stMap[k]).reduce((a,b)=>a+b,0))*100).toFixed(1)}%)`}}}
+  }});
+}
+
+// ═══════════════════════════════════════════════════════════
+// TAB 2: DISTRICTS
+// ═══════════════════════════════════════════════════════════
+function renderDistricts(){
+  const D=window.dashboardData;
+  const selDist=window.activeFilters.district;
+  document.getElementById('dist-detail').style.display=selDist?'block':'none';
+  document.getElementById('dist-default').style.display=selDist?'none':'block';
+  if(selDist){renderDistrictDetail(selDist,D);return;}
+
+  const dists=[...(D.district_data||[])].sort((a,b)=>parseFloat(b.Overall_Growth_pct||0)-parseFloat(a.Overall_Growth_pct||0));
+  window.xlData['dist-data']=dists;
+
+  mkChart('c-distrank',{type:'bar',data:{
+    labels:dists.map(d=>d.District),
+    datasets:[{label:'Growth%',data:dists.map(d=>parseFloat(d.Overall_Growth_pct||0)),
+      backgroundColor:dists.map(d=>parseFloat(d.Overall_Growth_pct||0)>=0?'rgba(76,175,80,.75)':'rgba(244,67,54,.75)'),borderRadius:3}]
+  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(1)}%`}}},
+    scales:{x:{ticks:{callback:v=>v+'%'},grid:{color:'#f0f4f8'}},y:{ticks:{font:{size:10}}}}
+  }});
+
+  initPg('dist',dists,20,()=>{
+    const {rows,total,page,size,start}=pgRows('dist');
+    document.getElementById('dist-tbody').innerHTML=rows.map((d,i)=>{
+      const g=parseFloat(d.Overall_Growth_pct||0);
+      return `<tr style="cursor:pointer" onclick="filterByDistrict('${d.District}')">
+        <td>${start+i+1}</td>
+        <td><strong>${d.District||'—'}</strong></td>
+        <td style="text-align:center">${fmtN(d.Total_Schools)}</td>
+        <td style="text-align:right">${fmtN(d.Enroll_2223||d.Total_Enrollment_2223)}</td>
+        <td style="text-align:right">${fmtN(d.Enroll_2526||d.Total_Enrollment_2526)}</td>
+        <td style="text-align:right"><span class="${clrG(g)}">${fmtP(g)}</span></td>
+        <td style="text-align:right">${fmtP(d.Girls_Growth_pct)}</td>
+        <td style="text-align:right">${fmtP(d.Avg_Continuity_89)}</td>
+        <td style="text-align:center">${d.Red_Blocks||0}</td>
+        <td>${healthBadge(d.Health_Tag)}</td>
+      </tr>`;
+    }).join('');
+    pgCtrl('dist','dist-info','dist-prev','dist-next');
+  });
+  window.pgRender['dist']();
+
+  // Gender chart
+  const top20=dists.slice(0,20);
+  mkChart('c-gender',{type:'bar',data:{
+    labels:top20.map(d=>d.District),
+    datasets:[
+      {label:'Girls Growth%',data:top20.map(d=>parseFloat(d.Girls_Growth_pct||0)),backgroundColor:'rgba(233,30,99,.75)',borderRadius:3},
+      {label:'Overall Growth%',data:top20.map(d=>parseFloat(d.Overall_Growth_pct||0)),backgroundColor:'rgba(33,150,243,.75)',borderRadius:3}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom'}},
+    scales:{y:{ticks:{callback:v=>v+'%'},grid:{color:'#f0f4f8'}},x:{ticks:{font:{size:9},maxRotation:45}}}
+  }});
+
+  // District trend lines (top 10)
+  const top10=dists.slice(0,10);
+  const colors=['#2196F3','#4CAF50','#F44336','#FF9800','#9C27B0','#00BCD4','#FF5722','#607D8B','#8BC34A','#E91E63'];
+  mkChart('c-disttrend',{type:'line',data:{
+    labels:YRCOLS,
+    datasets:top10.map((d,i)=>({
+      label:d.District,
+      data:[d.Enroll_2223||d.Total_Enrollment_2223,d.Enroll_2324,d.Enroll_2425,d.Enroll_2526||d.Total_Enrollment_2526].map(v=>parseFloat(v)||null),
+      borderColor:colors[i],backgroundColor:'transparent',borderWidth:1.5,pointRadius:3,tension:.3
+    }))
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:10}}},
+    scales:{y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},x:{grid:{display:false}}}
+  }});
+
+  // ── Boys/Girls Declining Lists ──
+  const allDists=[...(D.district_data||[])];
+  const bDecl=[...allDists].filter(d=>parseFloat(d.Boys_Growth_pct||0)<0)
+    .sort((a,b)=>parseFloat(a.Boys_Growth_pct||0)-parseFloat(b.Boys_Growth_pct||0));
+  const gDecl=[...allDists].filter(d=>parseFloat(d.Girls_Growth_pct||0)<0)
+    .sort((a,b)=>parseFloat(a.Girls_Growth_pct||0)-parseFloat(b.Girls_Growth_pct||0));
+  window._boysDecl=bDecl; window._girlsDecl=gDecl;
+  const renderDeclList=(arr,pctField,listId,footerId)=>{
+    document.getElementById(listId).innerHTML=arr.map(d=>`
+      <div onclick="filterByDistrict('${d.District}')" style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f0f0f0;cursor:pointer;font-size:.78rem" onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background=''">
+        <span style="color:var(--primary)">${d.District||'—'}</span>
+        <span style="color:#C0392B;font-weight:600">&#9660; ${Math.abs(parseFloat(d[pctField]||0)).toFixed(1)}%</span>
+      </div>`).join('');
+    document.getElementById(footerId).textContent=`Total ${arr.length} districts with declining enrollment`;
+  };
+  renderDeclList(bDecl,'Boys_Growth_pct','dist-boys-decl-list','dist-boys-decl-footer');
+  renderDeclList(gDecl,'Girls_Growth_pct','dist-girls-decl-list','dist-girls-decl-footer');
+
+  // ── Top 10 / Bottom 10 District Charts ──
+  const byEnroll=[...allDists].sort((a,b)=>parseFloat(b.Enroll_2526||b.Total_Enrollment_2526||0)-parseFloat(a.Enroll_2526||a.Total_Enrollment_2526||0));
+  const top10dist=byEnroll.slice(0,10);
+  const bot10dist=[...allDists].sort((a,b)=>parseFloat(a.Overall_Growth_pct||0)-parseFloat(b.Overall_Growth_pct||0)).slice(0,10);
+  mkChart('c-top10dist',{type:'bar',data:{
+    labels:top10dist.map(d=>d.District),
+    datasets:[{label:'Enrollment',data:top10dist.map(d=>parseFloat(d.Enroll_2526||d.Total_Enrollment_2526||0)),
+      backgroundColor:'rgba(27,122,62,.8)',borderRadius:3,barThickness:18}]
+  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    onClick:(_,els)=>{if(els.length)filterByDistrict(top10dist[els[0].index].District);},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.raw)}}},
+    scales:{x:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},y:{ticks:{font:{size:10}}}}
+  }});
+  mkChart('c-bot10dist',{type:'bar',data:{
+    labels:bot10dist.map(d=>d.District),
+    datasets:[{label:'Growth%',data:bot10dist.map(d=>parseFloat(d.Overall_Growth_pct||0)),
+      backgroundColor:bot10dist.map(d=>parseFloat(d.Overall_Growth_pct||0)<-5?'rgba(192,57,43,.8)':'rgba(230,126,34,.8)'),borderRadius:3,barThickness:18}]
+  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    onClick:(_,els)=>{if(els.length)filterByDistrict(bot10dist[els[0].index].District);},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(1)}%`}}},
+    scales:{x:{ticks:{callback:v=>v+'%'},grid:{color:'#f0f4f8'}},y:{ticks:{font:{size:10}}}}
+  }});
+}
+
+function clearDistrictFilter(){
+  document.getElementById('f-district').value='';
+  window.activeFilters.district='';
+  renderActiveTab();
+}
+
+function renderDistrictDetail(distName,D){
+  const distRow=(D.district_data||[]).find(d=>d.District===distName)||{};
+  const blocks=(D.block_health||[]).filter(b=>b.District===distName);
+  const g=parseFloat(distRow.Overall_Growth_pct||0);
+  const boysG=parseFloat(distRow.Boys_Growth_pct||0);
+  const girlsG=parseFloat(distRow.Girls_Growth_pct||0);
+
+  // Header
+  document.getElementById('dd-name').textContent=distName;
+  document.getElementById('dd-meta').innerHTML=`${distRow.Total_Schools||'—'} Schools &nbsp;|&nbsp; ${distRow.Red_Blocks||0} RED Blocks &nbsp;|&nbsp; Health: ${distRow.Health_Tag||'—'} &nbsp;|&nbsp; 4-Year Growth: <strong>${fmtP(g)}</strong>`;
+
+  // 4 Year Cards (like home page)
+  const yrData=[
+    {year:'2022-23',total:parseFloat(distRow.Enroll_2223||distRow.Total_Enrollment_2223||0),prev:null},
+    {year:'2023-24',total:parseFloat(distRow.Enroll_2324||0),prev:parseFloat(distRow.Enroll_2223||distRow.Total_Enrollment_2223||0)},
+    {year:'2024-25',total:parseFloat(distRow.Enroll_2425||0),prev:parseFloat(distRow.Enroll_2324||0)},
+    {year:'2025-26',total:parseFloat(distRow.Enroll_2526||distRow.Total_Enrollment_2526||0),prev:parseFloat(distRow.Enroll_2425||0)},
+  ];
+  document.getElementById('dd-year-cards').innerHTML=yrData.map(r=>{
+    const chg=r.prev&&r.prev>0?((r.total-r.prev)/r.prev*100):null;
+    const chgHtml=chg!=null?`<div class="yc-chg ${chg>=0?'pos':'neg'}">${fmtG(chg)}</div>`:'<div class="yc-chg" style="color:#aaa">Base year</div>';
+    return `<div class="yr-card"><div class="yc-yr">${r.year}</div><div class="yc-val">${fmtN(r.total)}</div><div class="yc-sub">enrollment</div>${chgHtml}</div>`;
+  }).join('');
+
+  // 4-year enrollment chart
+  const yrEnroll=[
+    parseFloat(distRow.Enroll_2223||distRow.Total_Enrollment_2223||0),
+    parseFloat(distRow.Enroll_2324||0),
+    parseFloat(distRow.Enroll_2425||0),
+    parseFloat(distRow.Enroll_2526||distRow.Total_Enrollment_2526||0)
+  ];
+  mkChart('c-dd-trend',{type:'bar',data:{
+    labels:YRCOLS,
+    datasets:[{label:'Enrollment',data:yrEnroll,
+      backgroundColor:['rgba(33,150,243,.65)','rgba(33,150,243,.65)','rgba(33,150,243,.65)','rgba(27,122,62,.85)'],
+      borderRadius:4,barThickness:36}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.raw)}}},
+    scales:{y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},x:{grid:{display:false}}}
+  }});
+
+  // Boys vs Girls growth bar
+  mkChart('c-dd-gender',{type:'bar',data:{
+    labels:['Boys Growth %','Girls Growth %'],
+    datasets:[{
+      data:[boysG,girlsG],
+      backgroundColor:[boysG>=0?'rgba(33,150,243,.8)':'rgba(244,67,54,.8)',girlsG>=0?'rgba(233,30,99,.8)':'rgba(244,67,54,.8)'],
+      borderRadius:5,barThickness:50
+    }]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(1)}%`}}},
+    scales:{y:{ticks:{callback:v=>v+'%'},grid:{color:'#f0f4f8'}},x:{grid:{display:false}}}
+  }});
+
+  // Block enrollment map
+  const blkEnrollMap={};
+  (D.heatmap_enrollment||[]).filter(h=>(h.District||h.district)===distName).forEach(h=>{
+    const key=h.Block||h.block||'';
+    const yr=h.Year||h.year;
+    if(yr==='2025-26') blkEnrollMap[key]=parseInt(h.Total_Enrollment||h.Avg_Enrollment||0)||0;
+    const v=parseInt(h[YRMAP['2025-26']]||0)||0;
+    if(v>0&&!blkEnrollMap[key]) blkEnrollMap[key]=v;
+  });
+  const bwe=blocks.map(b=>({...b,realEnroll:blkEnrollMap[b.Block||'']||0}));
+  const top5=[...bwe].sort((a,b)=>b.realEnroll-a.realEnroll).slice(0,5);
+  const declBlks=bwe.filter(b=>b.Block_Zone==='RED'||b.Block_Zone==='ORANGE')
+    .sort((a,b)=>parseFloat(a.Avg_Growth_pct||0)-parseFloat(b.Avg_Growth_pct||0));
+  window._ddTop5=top5; window._ddDecl=declBlks;
+
+  const mkBT=(id,rows,empty)=>{
+    const body=rows.length?rows.map(b=>`<tr>
+      <td><strong>${b.Block||'—'}</strong></td>
+      <td>${zoneBadge(b.Block_Zone)}</td>
+      <td style="text-align:center">${fmtN(b.Total_Schools||0)}</td>
+      <td style="text-align:right">${b.realEnroll?fmtN(b.realEnroll):'—'}</td>
+      <td style="text-align:right"><span class="${clrG(b.Avg_Growth_pct)}">${fmtP(b.Avg_Growth_pct)}</span></td>
+    </tr>`).join(''):`<tr><td colspan="5" style="text-align:center;padding:14px;color:#888">${empty}</td></tr>`;
+    document.getElementById(id).innerHTML=`<table class="dt"><thead><tr><th>Block</th><th>Zone</th><th>Schools</th><th>Enrollment</th><th>Growth%</th></tr></thead><tbody>${body}</tbody></table>`;
+  };
+  mkBT('dd-top5-tbl',top5,'No block data');
+  mkBT('dd-decl-tbl',declBlks,'No declining blocks — Good!');
+
+  // ── Boys & Girls Year-wise Trend ──
+  // Estimate from school data for this district
+  const distSchools=(D.all_schools||[]).filter(s=>(s.district||s.District)===distName);
+  const gRatio=yr=>{
+    // average girls ratio per year from school data
+    const col=yr==='2025-26'?'Girls_Ratio_2526':yr==='2024-25'?'Girls_Ratio_2425':yr==='2023-24'?'Girls_Ratio_2324':'Girls_Ratio_2223';
+    const vals=distSchools.map(s=>parseFloat(s[col]||s.Girls_Ratio_2526||0)).filter(v=>v>0);
+    return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0.5;
+  };
+  const yrEnrollArr=[
+    parseFloat(distRow.Enroll_2223||distRow.Total_Enrollment_2223||0),
+    parseFloat(distRow.Enroll_2324||0),
+    parseFloat(distRow.Enroll_2425||0),
+    parseFloat(distRow.Enroll_2526||distRow.Total_Enrollment_2526||0)
+  ];
+  const girlsArr=YRCOLS.map((yr,i)=>Math.round(yrEnrollArr[i]*(gRatio(yr))));
+  const boysArr=YRCOLS.map((yr,i)=>Math.round(yrEnrollArr[i]-girlsArr[i]));
+
+  const mkGenderTrend=(canvasId,data,color,label)=>{
+    const colors=data.map((v,i)=>i===0?`${color}.5)`:v>=(data[i-1]||0)?`rgba(27,122,62,.85)`:`rgba(192,57,43,.85)`);
+    mkChart(canvasId,{type:'bar',data:{
+      labels:YRCOLS,
+      datasets:[{label,data,backgroundColor:colors,borderRadius:4,barThickness:36}]
+    },options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>{
+          const prev=c.dataIndex>0?data[c.dataIndex-1]:null;
+          const chg=prev&&prev>0?((c.raw-prev)/prev*100):null;
+          return ` ${fmtN(c.raw)}${chg!=null?' ('+fmtP(chg)+')':''}`;
+        }}}},
+      scales:{y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},x:{grid:{display:false}}}
+    }});
+  };
+  mkGenderTrend('c-dd-boys',boysArr,'rgba(33,150,243,','Boys Enrollment');
+  mkGenderTrend('c-dd-girls',girlsArr,'rgba(233,30,99,','Girls Enrollment');
+}
+
+function filterByDistrict(dist){
+  document.getElementById('f-district').value=dist;
+  onDistrictChange();
+}
+
+// ═══════════════════════════════════════════════════════════
+// TAB 3: BLOCKS
+// ═══════════════════════════════════════════════════════════
+function renderBlocks(){
+  const D=window.dashboardData;
+  const selDist=window.blkFilters&&window.blkFilters.district||'';
+  const selBlk=window.blkFilters&&window.blkFilters.block||'';
+  const showDetail=selDist&&selBlk;
+  document.getElementById('blk-detail').style.display=showDetail?'block':'none';
+  document.getElementById('blk-default').style.display=showDetail?'none':'block';
+  if(showDetail){renderBlockDetail(selDist,selBlk,D);return;}
+
+  const blocks=getBlocks();
+  window.xlData['block-data']=blocks;
+
+  // Zone Distribution
+  const z=D.zone_summary||{};
+  const zoneEl=document.getElementById('blk-zone-row');
+  if(zoneEl) zoneEl.innerHTML=['RED','ORANGE','YELLOW','GREEN'].map(k=>`
+    <div class="zone-box zone-${k}" style="cursor:pointer" onclick="window.activeFilters.zone='${k}';renderActiveTab()">
+      <div class="zn">${z[k]||0}</div><div class="zl">${k} ZONE</div>
+    </div>`).join('');
+
+  // Top 5 / Bottom 5
+  const bh=D.block_health||[];
+  const blkEnrollMap={};
+  (D.heatmap_enrollment||[]).forEach(h=>{
+    const key=(h.District||h.district||'')+'|'+(h.Block||h.block||'');
+    const yr=h.Year||h.year;
+    if(yr==='2025-26') blkEnrollMap[key]=(parseInt(h.Total_Enrollment||h.Avg_Enrollment||0)||0);
+    const v=parseInt(h[YRMAP['2025-26']]||0)||0;
+    if(v>0&&!blkEnrollMap[key]) blkEnrollMap[key]=v;
+  });
+  const blksWithEnroll=bh.map(b=>({...b,realEnroll:blkEnrollMap[(b.District||'')+'|'+(b.Block||'')]||0}));
+  window._top5blk=[...blksWithEnroll].filter(b=>parseFloat(b.Avg_Growth_pct||0)>0&&b.realEnroll>0).sort((a,b)=>b.realEnroll-a.realEnroll).slice(0,5);
+  window._bot5blk=[...blksWithEnroll].filter(b=>b.Block_Zone==='RED'||b.Block_Zone==='ORANGE').sort((a,b)=>parseFloat(a.Avg_Growth_pct||0)-parseFloat(b.Avg_Growth_pct||0)).slice(0,5);
+  const mkBlkTbl=(id,rows)=>{
+    const body=rows.length?rows.map(b=>`<tr>
+      <td><strong>${b.Block||'—'}</strong></td><td>${b.District||'—'}</td>
+      <td style="text-align:center">${fmtN(b.Total_Schools||0)}</td>
+      <td style="text-align:right">${fmtN(b.realEnroll)||'—'}</td>
+      <td style="text-align:right"><span class="${clrG(b.Avg_Growth_pct)}">${fmtP(b.Avg_Growth_pct)}</span></td>
+    </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:16px;color:#888">No data</td></tr>';
+    document.getElementById(id).innerHTML=`<table class="dt"><thead><tr><th>Block</th><th>District</th><th>Schools</th><th>Enrollment</th><th>Growth%</th></tr></thead><tbody>${body}</tbody></table>`;
+  };
+  mkBlkTbl('top5blk-tbl',window._top5blk);
+  mkBlkTbl('bot5blk-tbl',window._bot5blk);
+
+  // Block Health Table
+  initPg('block',blocks,25,()=>{
+    const {rows}=pgRows('block');
+    document.getElementById('block-tbody').innerHTML=rows.map(b=>`<tr>
+      <td>${b.District||'—'}</td><td>${b.Block||'—'}</td>
+      <td>${zoneBadge(b.Block_Zone)}</td>
+      <td style="text-align:center">${fmtN(b.Total_Schools)}</td>
+      <td style="text-align:center">${fmtN(b.Growing_Schools)}</td>
+      <td style="text-align:center">${fmtN(b.Declining_Schools)}</td>
+      <td style="text-align:right"><span class="${clrG(b.Avg_Growth_pct)}">${fmtP(b.Avg_Growth_pct)}</span></td>
+      <td style="text-align:right">${fmtP(b.Avg_Continuity_89)}</td>
+      <td>${b.Priority||'—'}</td>
+    </tr>`).join('');
+    pgCtrl('block','block-info','block-prev','block-next');
+  });
+  window.pgRender['block']();
+}
+
+function onBlkDistrictChange(){
+  const dist=document.getElementById('blk-f-district').value;
+  const D=window.dashboardData;
+  const blkSel=document.getElementById('blk-f-block');
+  blkSel.innerHTML='<option value="">All Blocks</option>';
+  if(dist&&D.filter_options&&D.filter_options.blocks&&D.filter_options.blocks[dist]){
+    D.filter_options.blocks[dist].forEach(b=>{ blkSel.innerHTML+=`<option value="${b}">${b}</option>`; });
+  }
+}
+
+function onBlkGo(){
+  const dist=document.getElementById('blk-f-district').value;
+  const blk=document.getElementById('blk-f-block').value;
+  window.blkFilters={district:dist,block:blk};
+  const ldEl=document.getElementById('blk-loading');
+  if(ldEl) ldEl.style.display='inline-flex';
+  setTimeout(()=>{ renderBlocks(); if(ldEl) ldEl.style.display='none'; },0);
+}
+
+function resetBlkFilter(){
+  document.getElementById('blk-f-district').value='';
+  document.getElementById('blk-f-block').innerHTML='<option value="">All Blocks</option>';
+  window.blkFilters={district:'',block:''};
+  renderBlocks();
+}
+
+function renderBlockDetail(distName,blkName,D){
+  const blkRow=(D.block_health||[]).find(b=>b.District===distName&&b.Block===blkName)||{};
+  const g=parseFloat(blkRow.Avg_Growth_pct||0);
+
+  // Header
+  document.getElementById('blk-dd-name').textContent=`${blkName} — ${distName}`;
+  document.getElementById('blk-dd-meta').innerHTML=`${zoneBadge(blkRow.Block_Zone)} &nbsp; ${fmtN(blkRow.Total_Schools||0)} Schools &nbsp;|&nbsp; ${fmtN(blkRow.Growing_Schools||0)} Growing &nbsp;|&nbsp; ${fmtN(blkRow.Declining_Schools||0)} Declining &nbsp;|&nbsp; Growth: <strong>${fmtP(g)}</strong>`;
+
+  // 4-year enrollment from heatmap
+  const hmRows=(D.heatmap_enrollment||[]).filter(h=>(h.District||h.district)===distName&&(h.Block||h.block)===blkName);
+  const getHmVal=yr=>{
+    const r=hmRows.find(h=>(h.Year||h.year)===yr);
+    if(r) return parseInt(r.Total_Enrollment||r.Avg_Enrollment||0)||parseInt(r[YRMAP[yr]]||0)||0;
+    // fallback: sum from year column in any row
+    return hmRows.reduce((s,h)=>s+(parseInt(h[YRMAP[yr]]||0)||0),0);
+  };
+  const yrVals=YRCOLS.map(y=>getHmVal(y));
+
+  // 4 Year Cards
+  document.getElementById('blk-dd-year-cards').innerHTML=YRCOLS.map((yr,i)=>{
+    const prev=i>0?yrVals[i-1]:null;
+    const chg=prev&&prev>0?((yrVals[i]-prev)/prev*100):null;
+    const chgHtml=chg!=null?`<div class="yc-chg ${chg>=0?'pos':'neg'}">${fmtG(chg)}</div>`:'<div class="yc-chg" style="color:#aaa">Base year</div>';
+    return `<div class="yr-card"><div class="yc-yr">${yr}</div><div class="yc-val">${fmtN(yrVals[i])}</div><div class="yc-sub">enrollment</div>${chgHtml}</div>`;
+  }).join('');
+
+  // Enrollment trend chart
+  mkChart('c-blk-trend',{type:'bar',data:{
+    labels:YRCOLS,
+    datasets:[{label:'Enrollment',data:yrVals,
+      backgroundColor:['rgba(33,150,243,.65)','rgba(33,150,243,.65)','rgba(33,150,243,.65)','rgba(27,122,62,.85)'],
+      borderRadius:4,barThickness:36}]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.raw)}}},
+    scales:{y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},x:{grid:{display:false}}}
+  }});
+
+  // Boys vs Girls — from school data filtered by block
+  const blkSchools=(D.all_schools||[]).filter(s=>(s.block||s.Block)===blkName&&(s.district||s.District)===distName);
+  const totalEnroll26=blkSchools.reduce((s,sc)=>s+(parseFloat(sc.Enroll_2526||0)),0);
+  const avgGirlsRatio=blkSchools.length?blkSchools.reduce((s,sc)=>s+(parseFloat(sc.Girls_Ratio_2526||0.5)),0)/blkSchools.length:0.5;
+  const girlsE=Math.round(totalEnroll26*avgGirlsRatio);
+  const boysE=Math.round(totalEnroll26-girlsE);
+  const boysG=parseFloat(blkRow.Boys_Growth_pct||0);
+  const girlsG=parseFloat(blkRow.Girls_Growth_pct||0);
+  mkChart('c-blk-gender',{type:'bar',data:{
+    labels:['Boys','Girls'],
+    datasets:[
+      {label:'Enrollment 2025-26',data:[boysE,girlsE],backgroundColor:['rgba(33,150,243,.8)','rgba(233,30,99,.8)'],borderRadius:4,barThickness:50}
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtN(c.raw)}}},
+    scales:{y:{ticks:{callback:v=>(v/1000).toFixed(0)+'K'},grid:{color:'#f0f4f8'}},x:{grid:{display:false}}}
+  }});
+
+  // Declining schools
+  const boysDecl=blkSchools.filter(s=>parseFloat(s.Boys_Growth_pct||s.Overall_Growth_pct||0)<0)
+    .sort((a,b)=>parseFloat(a.Boys_Growth_pct||a.Overall_Growth_pct||0)-parseFloat(b.Boys_Growth_pct||b.Overall_Growth_pct||0));
+  const girlsDecl=blkSchools.filter(s=>parseFloat(s.Girls_Growth_pct||0)<0)
+    .sort((a,b)=>parseFloat(a.Girls_Growth_pct||0)-parseFloat(b.Girls_Growth_pct||0));
+  window._blkBoysDecl=boysDecl; window._blkGirlsDecl=girlsDecl;
+
+  const mkST=(id,rows,gField,empty)=>{
+    const body=rows.length?rows.map(s=>`<tr>
+      <td><strong>${s.school_name||s.School_Name||'—'}</strong></td>
+      <td style="text-align:right">${fmtN(s.Enroll_2526||0)}</td>
+      <td style="text-align:right"><span class="neg">▼ ${Math.abs(parseFloat(s[gField]||0)).toFixed(1)}%</span></td>
+    </tr>`).join(''):`<tr><td colspan="3" style="text-align:center;padding:14px;color:#888">${empty}</td></tr>`;
+    document.getElementById(id).innerHTML=`<table class="dt"><thead><tr><th>School</th><th>Enroll 2025-26</th><th>Growth%</th></tr></thead><tbody>${body}</tbody></table>`;
+  };
+  mkST('blk-boys-decl-tbl',boysDecl,'Boys_Growth_pct','No boys declining schools');
+  mkST('blk-girls-decl-tbl',girlsDecl,'Girls_Growth_pct','No girls declining schools');
+}
+
+// ═══════════════════════════════════════════════════════════
+// TAB 4: SCHOOL FINDER
+// ═══════════════════════════════════════════════════════════
+function renderSchools(){
+  const schools=getSchools();
+  const q=(document.getElementById('sch-search')||{}).value||'';
+  const riskF=(document.getElementById('sch-risk')||{}).value||'';
+  const trendF=(document.getElementById('sch-trend')||{}).value||'';
+  let filtered=schools;
+  if(q) filtered=filtered.filter(s=>(s.school_name||'').toLowerCase().includes(q.toLowerCase()));
+  if(riskF) filtered=filtered.filter(s=>(s.Risk_Level||'')===riskF);
+  if(trendF) filtered=filtered.filter(s=>(s.Trend_Tag||'')===trendF);
+  window.xlData['decline-filtered']=filtered;
+
+  initPg('sch',filtered,25,()=>{
+    const {rows,start}=pgRows('sch');
+    document.getElementById('sch-tbody').innerHTML=rows.map(s=>`<tr style="cursor:pointer" onclick="showModal('${s.school_id||s.School_ID||''}')">
+      <td><strong>${s.school_name||'—'}</strong></td>
+      <td>${s.district||s.District||'—'}</td>
+      <td>${s.block||s.Block||'—'}</td>
+      <td>${s.School_Type||'—'}</td>
+      <td style="text-align:right">${fmtN(s.Enroll_2526)}</td>
+      <td style="text-align:right"><span class="${clrG(s.Overall_Growth_pct)}">${fmtP(s.Overall_Growth_pct)}</span></td>
+      <td>${s.Trend_Tag||'—'}</td>
+      <td>${riskBadge(s.Risk_Level)}</td>
+      <td>${schoolFlags(s)}</td>
+    </tr>`).join('');
+    pgCtrl('sch','sch-info','sch-prev','sch-next');
+  });
+  window.pgRender['sch']();
+}
+
+function dlXLSchools(){
+  const schools=getSchools();
+  const q=(document.getElementById('sch-search')||{}).value||'';
+  let data=schools;
+  if(q) data=data.filter(s=>(s.school_name||'').toLowerCase().includes(q.toLowerCase()));
+  dlXLData(data,'filtered_schools');
+}
+
+function lookupUdise(){
+  const code=(document.getElementById('udise-input').value||'').trim();
+  const el=document.getElementById('udise-result');
+  if(code.length<6){el.style.display='none';return;}
+  const D=window.dashboardData;
+  if(!D){el.style.display='none';return;}
+  const s=(D.all_schools||[]).find(sc=>String(sc.school_id||sc.School_ID||'')===code||(sc.school_name||'').toLowerCase()===code.toLowerCase());
+  if(!s){
+    el.style.display='block';
+    el.innerHTML=`<div style="color:#C0392B;padding:10px">&#10060; UDISE Code "${code}" not found. Please check the code and try again.</div>`;
+    return;
+  }
+  // Compute girls/boys per year using ratio
+  const yrs=[
+    {yr:'2022-23',eKey:'Enroll_2223',rKey:'Girls_Ratio_2223'},
+    {yr:'2023-24',eKey:'Enroll_2324',rKey:'Girls_Ratio_2324'},
+    {yr:'2024-25',eKey:'Enroll_2425',rKey:'Girls_Ratio_2425'},
+    {yr:'2025-26',eKey:'Enroll_2526',rKey:'Girls_Ratio_2526'},
+  ];
+  const yrRows=yrs.map((y,i)=>{
+    const enroll=parseFloat(s[y.eKey]||0);
+    const ratio=parseFloat(s[y.rKey]||s.Girls_Ratio_2526||50);
+    const girls=Math.round(enroll*ratio/100);
+    const boys=enroll-girls;
+    const prev=i>0?parseFloat(s[yrs[i-1].eKey]||0):null;
+    const yoy=prev!==null&&prev>0?((enroll-prev)/prev*100):null;
+    const yoyHtml=yoy===null?'—':yoy>=0
+      ?`<span style="color:#27AE60;font-weight:600">&#9650;${yoy.toFixed(1)}%</span>`
+      :`<span style="color:#C0392B;font-weight:600">&#9660;${Math.abs(yoy).toFixed(1)}%</span>`;
+    return `<tr style="${i===3?'background:#f0f7ff;font-weight:600':''}">
+      <td>${y.yr}</td>
+      <td style="text-align:right">${fmtN(enroll)||'—'}</td>
+      <td style="text-align:right">${fmtN(boys)||'—'}</td>
+      <td style="text-align:right">${fmtN(girls)||'—'}</td>
+      <td style="text-align:center">${yoyHtml}</td>
+    </tr>`;
+  }).join('');
+
+  // Flags
+  const e2425=parseFloat(s.Enroll_2425||0);
+  const e2526=parseFloat(s.Enroll_2526||0);
+  const e2223=parseFloat(s.Enroll_2223||0);
+  const e2324=parseFloat(s.Enroll_2324||0);
+  const yoyDecl=e2526<e2425&&e2425>0;
+  const threeYrDecl=e2324<e2223&&e2425<e2324&&e2526<e2425&&e2223>0;
+  const girlsDecl=s.Girls_Declining_Flag==='Yes'||parseFloat(s.Girls_Growth_pct||0)<0;
+  const boysDecl=parseFloat(s.Boys_Growth_pct||0)<0;
+
+  const flagHtml=[
+    yoyDecl?`<span style="background:#C0392B;color:#fff;padding:3px 8px;border-radius:4px;font-size:.75rem;font-weight:700">&#9660; YoY Decline (2025-26 vs 2024-25)</span>`:'',
+    threeYrDecl?`<span style="background:#7B241C;color:#fff;padding:3px 8px;border-radius:4px;font-size:.75rem;font-weight:700">&#9888; 3 Consecutive Years Decline</span>`:'',
+    girlsDecl?`<span style="background:#AD1457;color:#fff;padding:3px 8px;border-radius:4px;font-size:.75rem;font-weight:700">&#128105; Girls Declining</span>`:'',
+    boysDecl?`<span style="background:#1565C0;color:#fff;padding:3px 8px;border-radius:4px;font-size:.75rem;font-weight:700">&#128104; Boys Declining</span>`:'',
+    !yoyDecl&&!threeYrDecl?`<span style="background:#27AE60;color:#fff;padding:3px 8px;border-radius:4px;font-size:.75rem;font-weight:700">&#9650; Growing / Stable</span>`:'',
+  ].filter(Boolean).join(' ');
+
+  el.style.display='block';
+  el.innerHTML=`
+    <div style="border-top:1px solid var(--border);padding-top:14px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <div>
+          <div style="font-size:1.1rem;font-weight:700;color:var(--primary)">${s.school_name||'—'}</div>
+          <div style="font-size:.8rem;color:#666;margin-top:3px">
+            UDISE: <strong>${s.school_id||s.School_ID||'—'}</strong> &nbsp;|&nbsp;
+            ${s.district||s.District||'—'} &rarr; ${s.block||s.Block||'—'} &nbsp;|&nbsp;
+            Type: ${s.School_Type||'—'}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          ${riskBadge(s.Risk_Level)}
+          <span style="font-size:.78rem;color:#555;background:#f5f5f5;padding:3px 8px;border-radius:4px">${s.Trend_Tag||'—'}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${flagHtml}</div>
+      <table class="dt" style="width:100%;margin-bottom:0">
+        <thead><tr>
+          <th>Year</th>
+          <th style="text-align:right">Total Enrollment</th>
+          <th style="text-align:right">&#128104; Boys</th>
+          <th style="text-align:right">&#128105; Girls</th>
+          <th style="text-align:center">YoY Change</th>
+        </tr></thead>
+        <tbody>${yrRows}</tbody>
+      </table>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// TAB 7: REPORT — HELPERS
+// ═══════════════════════════════════════════════════════════
+window.rptData={};
+
+function grwCol(v){
+  const n=parseFloat(v);
+  if(isNaN(n)) return '#888';
+  if(n>10) return '#1B7A3E';
+  if(n>0) return '#388E3C';
+  if(n>-10) return '#E67E22';
+  return '#C0392B';
+}
+function grwCell(v){
+  const n=parseFloat(v);
+  if(isNaN(n)||v==null||v==='') return '—';
+  const sym=n>=0?'▲':'▼';
+  return `<span style="color:${grwCol(n)};font-weight:600">${sym}${Math.abs(n).toFixed(1)}%</span>`;
+}
+function filterRptTbl(tblId,q){
+  const tbl=document.getElementById(tblId);
+  if(!tbl) return;
+  const ql=q.toLowerCase();
+  tbl.querySelectorAll('tbody tr').forEach(r=>{
+    r.style.display=ql&&!r.textContent.toLowerCase().includes(ql)?'none':'';
+  });
+}
+function rptScroll(id,el){
+  document.querySelectorAll('.rpt-nav a').forEach(a=>a.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const target=document.getElementById(id);
+  if(target) target.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function rptSecHdr(n,title,btn=''){
+  return `<div class="rpt-sec-hdr"><span>${n}. ${title}</span>${btn}</div>`;
+}
+function rptSummary(html){
+  return `<div class="rpt-summary">${html}</div>`;
+}
+function rptSearch(tblId,ph){
+  return `<input type="text" placeholder="&#128269; ${ph||'Search...'}" oninput="filterRptTbl('${tblId}',this.value)" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:.75rem;width:280px;margin-bottom:8px;font-family:inherit">`;
+}
+function dlBtn(fn){
+  return `<button class="btn btn-success" style="font-size:.7rem;padding:3px 8px" onclick="${fn}">&#11123; Excel</button>`;
+}
+function goToSchool(name){
+  switchTab('schools');
+  setTimeout(()=>{const el=document.getElementById('sch-search');if(el){el.value=name;renderSchools();}},100);
+}
+
+// ── Section 1: State Summary ─────────────────────────────────
+function rptSec1(kpi,m,trend){
+  const rows=trend.map((r,i)=>{
+    const prev=i>0?trend[i-1].total:null;
+    const chg=prev?(r.total-prev):null;
+    const pct=prev?((r.total-prev)/prev*100):null;
+    return `<tr>
+      <td><strong>${r.year}</strong></td>
+      <td style="text-align:right">${fmtN(r.total)}</td>
+      <td style="text-align:right">${chg!=null?(chg>=0?'+':'')+fmtN(Math.abs(chg)):'Base year'}</td>
+      <td style="text-align:right">${pct!=null?grwCell(pct):'—'}</td>
+    </tr>`;
+  }).join('');
+  const stats=[
+    {l:'Growing Schools',v:kpi.Growing_Schools||'—',c:'success'},
+    {l:'Declining Schools',v:kpi.Declining_Schools||'—',c:'danger'},
+    {l:'Model Schools',v:kpi.Model_Schools||'—',c:'primary'},
+    {l:'Closure Risk Schools',v:kpi.Closure_Risk_Schools||'—',c:'danger'},
+    {l:'Avg Girls Ratio',v:kpi.Avg_Girls_Ratio?parseFloat(kpi.Avg_Girls_Ratio).toFixed(2)+'%':'—',c:'secondary'},
+    {l:'HIGH RISK Schools',v:kpi.High_Risk_Schools||'—',c:'danger'},
+  ];
+  document.getElementById('rpt-s1').innerHTML=`
+    ${rptSecHdr(1,'State Summary',dlBtn("dlXLSec('state')"))}
+    <div class="g2" style="margin:10px 0">
+      <div><div style="max-height:220px;overflow:auto">
+        <table class="dt" id="rpt-tbl1">
+          <thead><tr>
+            <th onclick="sortTbl('rpt-tbl1',0,'str')">Year</th>
+            <th onclick="sortTbl('rpt-tbl1',1,'num')">Total Enrollment</th>
+            <th onclick="sortTbl('rpt-tbl1',2,'num')">Change</th>
+            <th onclick="sortTbl('rpt-tbl1',3,'num')">YoY Growth%</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start">
+        ${stats.map(x=>`<div class="kpi ${x.c}"><div class="kpi-lbl">${x.l}</div><div class="kpi-val">${x.v}</div></div>`).join('')}
+      </div>
+    </div>`;
+}
+
+// ── Section 2: All Districts ─────────────────────────────────
+function rptSec2(allDists,growing,declining){
+  const rows=allDists.map((d,i)=>`<tr>
+    <td>${d.District_Rank||i+1}</td>
+    <td><strong>${d.District||'—'}</strong></td>
+    <td style="text-align:center">${fmtN(d.Total_Schools)}</td>
+    <td style="text-align:right">${fmtN(d.Enroll_2223||d.Total_Enrollment_2223)}</td>
+    <td style="text-align:right">${fmtN(d.Enroll_2324||d.Total_Enrollment_2324)}</td>
+    <td style="text-align:right">${fmtN(d.Enroll_2425||d.Total_Enrollment_2425)}</td>
+    <td style="text-align:right">${fmtN(d.Enroll_2526||d.Total_Enrollment_2526)}</td>
+    <td style="text-align:right">${grwCell(d.Overall_Growth_pct)}</td>
+    <td style="text-align:right">${grwCell(d.Growth_Y1||d.YoY_Growth_Y1)}</td>
+    <td style="text-align:right">${grwCell(d.Growth_Y2||d.YoY_Growth_Y2)}</td>
+    <td style="text-align:right">${grwCell(d.Growth_Y3||d.YoY_Growth_Y3)}</td>
+    <td style="text-align:right">${grwCell(d.Girls_Growth_pct)}</td>
+    <td style="text-align:right">${grwCell(d.Boys_Growth_pct)}</td>
+    <td style="text-align:center">${d.Red_Blocks||0}</td>
+    <td>${healthBadge(d.Health_Tag)}</td>
+  </tr>`).join('');
+  document.getElementById('rpt-s2').innerHTML=`
+    ${rptSecHdr(2,'All Districts — Year-wise Enrollment',dlBtn("dlXLSec('allDists')"))}
+    ${rptSummary(`<strong>${allDists.length}</strong> districts &nbsp;|&nbsp; <strong class="pos">${growing} growing</strong> &nbsp;|&nbsp; <strong class="neg">${declining} declining</strong>`)}
+    ${rptSearch('rpt-tbl2','Search district...')}
+    <div style="max-height:450px;overflow:auto">
+    <table class="dt" id="rpt-tbl2">
+      <thead><tr>
+        <th onclick="sortTbl('rpt-tbl2',0,'num')">Rank</th>
+        <th onclick="sortTbl('rpt-tbl2',1,'str')">District</th>
+        <th onclick="sortTbl('rpt-tbl2',2,'num')">Schools</th>
+        <th onclick="sortTbl('rpt-tbl2',3,'num')">2022-23</th>
+        <th onclick="sortTbl('rpt-tbl2',4,'num')">2023-24</th>
+        <th onclick="sortTbl('rpt-tbl2',5,'num')">2024-25</th>
+        <th onclick="sortTbl('rpt-tbl2',6,'num')">2025-26</th>
+        <th onclick="sortTbl('rpt-tbl2',7,'num')">Overall%</th>
+        <th onclick="sortTbl('rpt-tbl2',8,'num')">Y1 22→23</th>
+        <th onclick="sortTbl('rpt-tbl2',9,'num')">Y2 23→24</th>
+        <th onclick="sortTbl('rpt-tbl2',10,'num')">Y3 24→25</th>
+        <th onclick="sortTbl('rpt-tbl2',11,'num')">Girls%</th>
+        <th onclick="sortTbl('rpt-tbl2',12,'num')">Boys%</th>
+        <th onclick="sortTbl('rpt-tbl2',13,'num')">RED Blks</th>
+        <th>Health</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// ── Section 3: Districts Declined ────────────────────────────
+function rptSec3(distDeclined,totalLoss){
+  const rows=distDeclined.map((d,i)=>`<tr style="background:#fff5f5">
+    <td>${i+1}</td>
+    <td><strong>${d.District||'—'}</strong></td>
+    <td style="text-align:center">${fmtN(d.Total_Schools)}</td>
+    <td style="text-align:right">${fmtN(d.Enroll_2223||d.Total_Enrollment_2223)}</td>
+    <td style="text-align:right">${fmtN(d.Enroll_2526||d.Total_Enrollment_2526)}</td>
+    <td style="text-align:right">${grwCell(d.Overall_Growth_pct)}</td>
+    <td style="text-align:right">${grwCell(d.Girls_Growth_pct)}</td>
+    <td style="text-align:right">${grwCell(d.Boys_Growth_pct)}</td>
+    <td style="text-align:center">${d.Red_Blocks||0}</td>
+    <td style="text-align:center">${d.Girls_Declining_Schools||'—'}</td>
+    <td>${healthBadge(d.Health_Tag)}</td>
+  </tr>`).join('');
+  document.getElementById('rpt-s3').innerHTML=`
+    ${rptSecHdr(3,'Districts Where Enrollment Declined',dlBtn("dlXLSec('distDeclined')"))}
+    ${rptSummary(`<strong class="neg">${distDeclined.length} districts declined</strong> &nbsp;|&nbsp; Total enrollment loss: <strong class="neg">${fmtN(totalLoss)}</strong> students`)}
+    ${rptSearch('rpt-tbl3','Search district...')}
+    <div style="max-height:450px;overflow:auto">
+    <table class="dt" id="rpt-tbl3">
+      <thead><tr>
+        <th>Rank</th>
+        <th onclick="sortTbl('rpt-tbl3',1,'str')">District</th>
+        <th onclick="sortTbl('rpt-tbl3',2,'num')">Schools</th>
+        <th onclick="sortTbl('rpt-tbl3',3,'num')">Enroll 2022-23</th>
+        <th onclick="sortTbl('rpt-tbl3',4,'num')">Enroll 2025-26</th>
+        <th onclick="sortTbl('rpt-tbl3',5,'num')">Decline%</th>
+        <th onclick="sortTbl('rpt-tbl3',6,'num')">Girls%</th>
+        <th onclick="sortTbl('rpt-tbl3',7,'num')">Boys%</th>
+        <th onclick="sortTbl('rpt-tbl3',8,'num')">RED Blocks</th>
+        <th onclick="sortTbl('rpt-tbl3',9,'num')">Girls&#8595; Schools</th>
+        <th>Health</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// ── Section 4: Blocks Declined ───────────────────────────────
+function rptSec4(blocksDeclined,hmMap,redBlocks,orangeBlocks){
+  const rows=blocksDeclined.map(b=>{
+    const key=(b.District||'')+'|'+(b.Block||'');
+    const hy=hmMap[key]||{};
+    return `<tr>
+      <td>${b.District||'—'}</td>
+      <td>${b.Block||'—'}</td>
+      <td>${zoneBadge(b.Block_Zone)}</td>
+      <td style="text-align:center">${fmtN(b.Total_Schools)}</td>
+      <td style="text-align:center">${fmtN(b.Growing_Schools)}</td>
+      <td style="text-align:center">${fmtN(b.Declining_Schools)}</td>
+      <td style="text-align:right">${hy['2022-23']?fmtN(hy['2022-23']):'—'}</td>
+      <td style="text-align:right">${hy['2023-24']?fmtN(hy['2023-24']):'—'}</td>
+      <td style="text-align:right">${hy['2024-25']?fmtN(hy['2024-25']):'—'}</td>
+      <td style="text-align:right">${hy['2025-26']?fmtN(hy['2025-26']):'—'}</td>
+      <td style="text-align:right">${grwCell(b.Avg_Growth_pct)}</td>
+      <td style="text-align:center">${b.Girls_Declining_Schools||'—'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('rpt-s4').innerHTML=`
+    ${rptSecHdr(4,'Blocks Where Enrollment Declined',dlBtn("dlXLSec('blocksDeclined')"))}
+    ${rptSummary(`<strong class="neg">${redBlocks} RED blocks</strong> + <strong style="color:#E67E22">${orangeBlocks} ORANGE blocks</strong> = <strong>${redBlocks+orangeBlocks} blocks</strong> need attention`)}
+    ${rptSearch('rpt-tbl4','Search district or block...')}
+    <div style="max-height:450px;overflow:auto">
+    <table class="dt" id="rpt-tbl4">
+      <thead><tr>
+        <th onclick="sortTbl('rpt-tbl4',0,'str')">District</th>
+        <th onclick="sortTbl('rpt-tbl4',1,'str')">Block</th>
+        <th onclick="sortTbl('rpt-tbl4',2,'str')">Zone</th>
+        <th onclick="sortTbl('rpt-tbl4',3,'num')">Schools</th>
+        <th onclick="sortTbl('rpt-tbl4',4,'num')">Growing</th>
+        <th onclick="sortTbl('rpt-tbl4',5,'num')">Declining</th>
+        <th onclick="sortTbl('rpt-tbl4',6,'num')">2022-23</th>
+        <th onclick="sortTbl('rpt-tbl4',7,'num')">2023-24</th>
+        <th onclick="sortTbl('rpt-tbl4',8,'num')">2024-25</th>
+        <th onclick="sortTbl('rpt-tbl4',9,'num')">2025-26</th>
+        <th onclick="sortTbl('rpt-tbl4',10,'num')">Overall%</th>
+        <th onclick="sortTbl('rpt-tbl4',11,'num')">Girls&#8595;</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// ── Section 5: Schools Declined (2025-26 vs 2024-25) ─────────
+function rptSec5(schoolsDeclined,girlsAlsoDeclined){
+  const rows=schoolsDeclined.map(s=>{
+    const e2425=parseFloat(s.Enroll_2425||0);
+    const e2526=parseFloat(s.Enroll_2526||0);
+    const yoy=e2425>0?((e2526-e2425)/e2425*100):null;
+    return `<tr style="cursor:pointer" onclick="goToSchool('${(s.school_name||'').replace(/'/g,'')}')">
+    <td>${s.district||s.District||'—'}</td>
+    <td>${s.block||s.Block||'—'}</td>
+    <td><strong>${s.school_name||'—'}</strong></td>
+    <td>${s.School_Type||'—'}</td>
+    <td style="text-align:right">${fmtN(e2425)}</td>
+    <td style="text-align:right">${fmtN(e2526)}</td>
+    <td style="text-align:right">${yoy!==null?grwCell(yoy.toFixed(2)):'—'}</td>
+    <td style="text-align:right">${grwCell(s.Girls_Growth_pct)}</td>
+    <td style="text-align:right">${grwCell(s.Boys_Growth_pct)}</td>
+    <td>${riskBadge(s.Risk_Level)}</td>
+  </tr>`;
+  }).join('');
+  document.getElementById('rpt-s5').innerHTML=`
+    ${rptSecHdr(5,'Schools Where Enrollment Declined (2025-26 vs 2024-25)',dlBtn("dlXLSec('schoolsDeclined')"))}
+    ${rptSummary(`<strong class="neg">${schoolsDeclined.length} schools</strong> me 2025-26 me 2024-25 se giravat &nbsp;|&nbsp; Girls bhi declining: <strong class="neg">${girlsAlsoDeclined}</strong> &nbsp;|&nbsp; <em>Click row to open in School Finder</em>`)}
+    ${rptSearch('rpt-tbl5','Search school, district, block...')}
+    <div style="max-height:450px;overflow:auto">
+    <table class="dt" id="rpt-tbl5">
+      <thead><tr>
+        <th onclick="sortTbl('rpt-tbl5',0,'str')">District</th>
+        <th onclick="sortTbl('rpt-tbl5',1,'str')">Block</th>
+        <th onclick="sortTbl('rpt-tbl5',2,'str')">School Name</th>
+        <th onclick="sortTbl('rpt-tbl5',3,'str')">Type</th>
+        <th onclick="sortTbl('rpt-tbl5',4,'num')">Enroll 2024-25</th>
+        <th onclick="sortTbl('rpt-tbl5',5,'num')">Enroll 2025-26</th>
+        <th onclick="sortTbl('rpt-tbl5',6,'num')">YoY Change%</th>
+        <th onclick="sortTbl('rpt-tbl5',7,'num')">Girls%</th>
+        <th onclick="sortTbl('rpt-tbl5',8,'num')">Boys%</th>
+        <th>Risk</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// ── Section 6: Girls Declined ────────────────────────────────
+function rptSec6(girlsDeclined){
+  const rows=girlsDeclined.length?girlsDeclined.map(s=>`<tr style="background:#fff0f5">
+    <td>${s.district||s.District||'—'}</td>
+    <td>${s.block||s.Block||'—'}</td>
+    <td><strong>${s.school_name||'—'}</strong></td>
+    <td>${s.School_Type||'—'}</td>
+    <td style="text-align:right">${fmtN(s.Girls_2223||s.Girls_Enroll_2223||s.Girls_2022)}</td>
+    <td style="text-align:right">${fmtN(s.Girls_2526||s.Girls_Enroll_2526||s.Girls_2026)}</td>
+    <td style="text-align:right"><span style="color:#C0392B;font-weight:600">&#9660;${Math.abs(parseFloat(s.Girls_Growth_Pct||s.Girls_Growth_pct||0)).toFixed(1)}%</span></td>
+    <td style="text-align:right">${fmtN(s.Boys_2223||s.Boys_Enroll_2223||s.Boys_2022)}</td>
+    <td style="text-align:right">${fmtN(s.Boys_2526||s.Boys_Enroll_2526||s.Boys_2026)}</td>
+    <td style="text-align:right">${grwCell(s.Boys_Growth_Pct||s.Boys_Growth_pct)}</td>
+    <td style="text-align:right">${grwCell(s.Overall_Growth_pct)}</td>
+    <td>${riskBadge(s.Risk_Level)}</td>
+  </tr>`).join(''):'<tr><td colspan="12" style="text-align:center;padding:20px;color:#888">Data not available — check girls_ladder key in dashboard_data.json</td></tr>';
+  document.getElementById('rpt-s6').innerHTML=`
+    ${rptSecHdr(6,'Schools Where Girls Enrollment Declined',dlBtn("dlXLSec('girlsDeclined')"))}
+    ${rptSummary(`<strong style="color:#e91e63">${girlsDeclined.length} schools</strong> where girls enrollment declined`)}
+    ${rptSearch('rpt-tbl6','Search school, district, block...')}
+    <div style="max-height:450px;overflow:auto">
+    <table class="dt" id="rpt-tbl6">
+      <thead><tr>
+        <th onclick="sortTbl('rpt-tbl6',0,'str')">District</th>
+        <th onclick="sortTbl('rpt-tbl6',1,'str')">Block</th>
+        <th onclick="sortTbl('rpt-tbl6',2,'str')">School Name</th>
+        <th onclick="sortTbl('rpt-tbl6',3,'str')">Type</th>
+        <th onclick="sortTbl('rpt-tbl6',4,'num')">Girls 2022-23</th>
+        <th onclick="sortTbl('rpt-tbl6',5,'num')">Girls 2025-26</th>
+        <th onclick="sortTbl('rpt-tbl6',6,'num')">Girls Growth%</th>
+        <th onclick="sortTbl('rpt-tbl6',7,'num')">Boys 2022-23</th>
+        <th onclick="sortTbl('rpt-tbl6',8,'num')">Boys 2025-26</th>
+        <th onclick="sortTbl('rpt-tbl6',9,'num')">Boys Growth%</th>
+        <th onclick="sortTbl('rpt-tbl6',10,'num')">Overall%</th>
+        <th>Risk</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// ── Section 7: Boys Declined ─────────────────────────────────
+function rptSec7(boysDeclined){
+  const rows=boysDeclined.length?boysDeclined.map(s=>`<tr style="background:#f0f5ff">
+    <td>${s.district||s.District||'—'}</td>
+    <td>${s.block||s.Block||'—'}</td>
+    <td><strong>${s.school_name||'—'}</strong></td>
+    <td>${s.School_Type||'—'}</td>
+    <td style="text-align:right">${fmtN(s.Boys_2223||s.Boys_Enroll_2223||s.Boys_2022)}</td>
+    <td style="text-align:right">${fmtN(s.Boys_2526||s.Boys_Enroll_2526||s.Boys_2026)}</td>
+    <td style="text-align:right"><span style="color:#C0392B;font-weight:600">&#9660;${Math.abs(parseFloat(s.Boys_Growth_Pct||s.Boys_Growth_pct||0)).toFixed(1)}%</span></td>
+    <td style="text-align:right">${fmtN(s.Girls_2223||s.Girls_Enroll_2223||s.Girls_2022)}</td>
+    <td style="text-align:right">${fmtN(s.Girls_2526||s.Girls_Enroll_2526||s.Girls_2026)}</td>
+    <td style="text-align:right">${grwCell(s.Girls_Growth_Pct||s.Girls_Growth_pct)}</td>
+    <td style="text-align:right">${grwCell(s.Overall_Growth_pct)}</td>
+    <td>${riskBadge(s.Risk_Level)}</td>
+  </tr>`).join(''):'<tr><td colspan="12" style="text-align:center;padding:20px;color:#888">Data not available — check girls_ladder key in dashboard_data.json</td></tr>';
+  document.getElementById('rpt-s7').innerHTML=`
+    ${rptSecHdr(7,'Schools Where Boys Enrollment Declined',dlBtn("dlXLSec('boysDeclined')"))}
+    ${rptSummary(`<strong style="color:#2196F3">${boysDeclined.length} schools</strong> where boys enrollment declined`)}
+    ${rptSearch('rpt-tbl7','Search school, district, block...')}
+    <div style="max-height:450px;overflow:auto">
+    <table class="dt" id="rpt-tbl7">
+      <thead><tr>
+        <th onclick="sortTbl('rpt-tbl7',0,'str')">District</th>
+        <th onclick="sortTbl('rpt-tbl7',1,'str')">Block</th>
+        <th onclick="sortTbl('rpt-tbl7',2,'str')">School Name</th>
+        <th onclick="sortTbl('rpt-tbl7',3,'str')">Type</th>
+        <th onclick="sortTbl('rpt-tbl7',4,'num')">Boys 2022-23</th>
+        <th onclick="sortTbl('rpt-tbl7',5,'num')">Boys 2025-26</th>
+        <th onclick="sortTbl('rpt-tbl7',6,'num')">Boys Growth%</th>
+        <th onclick="sortTbl('rpt-tbl7',7,'num')">Girls 2022-23</th>
+        <th onclick="sortTbl('rpt-tbl7',8,'num')">Girls 2025-26</th>
+        <th onclick="sortTbl('rpt-tbl7',9,'num')">Girls Growth%</th>
+        <th onclick="sortTbl('rpt-tbl7',10,'num')">Overall%</th>
+        <th>Risk</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// ── Section 8: Block Health Table ────────────────────────────
+function rptSec8(bh){
+  const allBh=[...bh].sort((a,b)=>{
+    const zOrder={RED:0,ORANGE:1,YELLOW:2,GREEN:3};
+    return (zOrder[a.Block_Zone]??9)-(zOrder[b.Block_Zone]??9)||parseFloat(a.Avg_Growth_pct||0)-parseFloat(b.Avg_Growth_pct||0);
+  });
+  const rows=allBh.length?allBh.map(b=>`<tr>
+    <td>${b.District||'—'}</td>
+    <td>${b.Block||'—'}</td>
+    <td style="text-align:center">${zoneBadge(b.Block_Zone)}</td>
+    <td style="text-align:right">${fmtN(b.Total_Schools)}</td>
+    <td style="text-align:right">${fmtN(b.Growing_Schools)}</td>
+    <td style="text-align:right">${fmtN(b.Declining_Schools)}</td>
+    <td style="text-align:right">${fmtN(b.Boys_Declining_Schools||'—')}</td>
+    <td style="text-align:right">${fmtN(b.Girls_Declining_Schools||'—')}</td>
+    <td style="text-align:right">${grwCell(b.Avg_Growth_pct)}</td>
+    <td style="text-align:right">${grwCell(b.Boys_Avg_Growth_pct||b.Boys_Growth_pct)}</td>
+    <td style="text-align:right">${grwCell(b.Girls_Avg_Growth_pct||b.Girls_Growth_pct)}</td>
+  </tr>`).join(''):'<tr><td colspan="11" style="text-align:center;padding:20px;color:#888">Block health data not available</td></tr>';
+  const red=bh.filter(b=>b.Block_Zone==='RED').length;
+  const orange=bh.filter(b=>b.Block_Zone==='ORANGE').length;
+  const green=bh.filter(b=>b.Block_Zone==='GREEN').length;
+  document.getElementById('rpt-s8').innerHTML=`
+    ${rptSecHdr(8,'Block Health Summary',dlBtn("dlXLSec('blockHealth')"))}
+    ${rptSummary(`<strong style="color:#C0392B">${red} RED</strong> · <strong style="color:#E67E22">${orange} ORANGE</strong> · <strong style="color:#27AE60">${green} GREEN</strong> — Total <strong>${bh.length} blocks</strong>`)}
+    ${rptSearch('rpt-tbl8','Search district or block...')}
+    <div style="max-height:450px;overflow:auto">
+    <table class="dt" id="rpt-tbl8">
+      <thead><tr>
+        <th onclick="sortTbl('rpt-tbl8',0,'str')">District</th>
+        <th onclick="sortTbl('rpt-tbl8',1,'str')">Block</th>
+        <th onclick="sortTbl('rpt-tbl8',2,'str')">Zone</th>
+        <th onclick="sortTbl('rpt-tbl8',3,'num')">Total Schools</th>
+        <th onclick="sortTbl('rpt-tbl8',4,'num')">Growing</th>
+        <th onclick="sortTbl('rpt-tbl8',5,'num')">Declining</th>
+        <th onclick="sortTbl('rpt-tbl8',6,'num')">Boys&#8595;</th>
+        <th onclick="sortTbl('rpt-tbl8',7,'num')">Girls&#8595;</th>
+        <th onclick="sortTbl('rpt-tbl8',8,'num')">Overall%</th>
+        <th onclick="sortTbl('rpt-tbl8',9,'num')">Boys%</th>
+        <th onclick="sortTbl('rpt-tbl8',10,'num')">Girls%</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// ── Section 9: 3 Consecutive Years Declining ─────────────────
+function rptSec9(schools){
+  const rows=schools.length?schools.map(s=>{
+    const e2223=parseFloat(s.Enroll_2223||0);
+    const e2324=parseFloat(s.Enroll_2324||0);
+    const e2425=parseFloat(s.Enroll_2425||0);
+    const e2526=parseFloat(s.Enroll_2526||0);
+    const totalLoss=e2223-e2526;
+    const totalPct=e2223>0?((e2526-e2223)/e2223*100):0;
+    return `<tr style="background:#fff5f5;cursor:pointer" onclick="goToSchool('${(s.school_name||'').replace(/'/g,'')}')">
+    <td>${s.district||s.District||'—'}</td>
+    <td>${s.block||s.Block||'—'}</td>
+    <td><strong>${s.school_name||'—'}</strong></td>
+    <td>${s.School_Type||'—'}</td>
+    <td style="text-align:right">${fmtN(e2223)}</td>
+    <td style="text-align:right">${fmtN(e2324)}</td>
+    <td style="text-align:right">${fmtN(e2425)}</td>
+    <td style="text-align:right">${fmtN(e2526)}</td>
+    <td style="text-align:right"><span class="neg">&#9660;${fmtN(totalLoss)}</span></td>
+    <td style="text-align:right">${grwCell(totalPct.toFixed(2))}</td>
+    <td>${riskBadge(s.Risk_Level)}</td>
+  </tr>`;
+  }).join(''):`<tr><td colspan="11" style="text-align:center;padding:20px;color:#888">No schools found with 3 consecutive years of decline</td></tr>`;
+  document.getElementById('rpt-s9').innerHTML=`
+    ${rptSecHdr(9,'Schools With 3 Consecutive Years of Declining Enrollment',dlBtn("dlXLSec('threeYrDeclined')"))}
+    ${rptSummary(`<strong class="neg">${schools.length} schools</strong> with continuous enrollment decline every year from 2022-23 to 2025-26 — require immediate attention &nbsp;|&nbsp; <em>Click row to open in School Finder</em>`)}
+    ${rptSearch('rpt-tbl9','Search school, district, block...')}
+    <div style="max-height:450px;overflow:auto">
+    <table class="dt" id="rpt-tbl9">
+      <thead><tr>
+        <th onclick="sortTbl('rpt-tbl9',0,'str')">District</th>
+        <th onclick="sortTbl('rpt-tbl9',1,'str')">Block</th>
+        <th onclick="sortTbl('rpt-tbl9',2,'str')">School Name</th>
+        <th onclick="sortTbl('rpt-tbl9',3,'str')">Type</th>
+        <th onclick="sortTbl('rpt-tbl9',4,'num')">2022-23</th>
+        <th onclick="sortTbl('rpt-tbl9',5,'num')">2023-24</th>
+        <th onclick="sortTbl('rpt-tbl9',6,'num')">2024-25</th>
+        <th onclick="sortTbl('rpt-tbl9',7,'num')">2025-26</th>
+        <th onclick="sortTbl('rpt-tbl9',8,'num')">Total Loss</th>
+        <th onclick="sortTbl('rpt-tbl9',9,'num')">Overall%</th>
+        <th>Risk</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// ── MAIN renderReport ────────────────────────────────────────
+function renderReport(){
+  const D=window.dashboardData;
+  if(!D) return;
+  const kpi=D.state_kpis||{};
+  const m=D.metadata||{};
+  const allDists=[...(D.district_data||[])].sort((a,b)=>parseInt(a.District_Rank||999)-parseInt(b.District_Rank||999));
+  const bh=D.block_health||[];
+  const allSchools=D.all_schools||[];
+  const glArr=D.girls_ladder||D.gender_data||[];
+
+  const distDeclined=[...allDists].filter(d=>parseFloat(d.Overall_Growth_pct||0)<0).sort((a,b)=>parseFloat(a.Overall_Growth_pct||0)-parseFloat(b.Overall_Growth_pct||0));
+  const blocksDeclined=[...bh].filter(b=>b.Block_Zone==='RED'||b.Block_Zone==='ORANGE').sort((a,b)=>parseFloat(a.Avg_Growth_pct||0)-parseFloat(b.Avg_Growth_pct||0));
+  const schoolsDeclined=[...allSchools].filter(s=>parseFloat(s.Enroll_2526||0)<parseFloat(s.Enroll_2425||0)&&parseFloat(s.Enroll_2425||0)>0).sort((a,b)=>{const yA=(parseFloat(a.Enroll_2526||0)-parseFloat(a.Enroll_2425||0))/parseFloat(a.Enroll_2425||1)*100;const yB=(parseFloat(b.Enroll_2526||0)-parseFloat(b.Enroll_2425||0))/parseFloat(b.Enroll_2425||1)*100;return yA-yB;});
+  const girlsDeclined=[...glArr].filter(s=>s.Girls_Declining_Flag==='Yes'||parseFloat(s.Girls_Growth_Pct||s.Girls_Growth_pct||0)<0).sort((a,b)=>parseFloat(a.Girls_Growth_Pct||a.Girls_Growth_pct||0)-parseFloat(b.Girls_Growth_Pct||b.Girls_Growth_pct||0));
+  const boysDeclined=[...glArr].filter(s=>parseFloat(s.Boys_Growth_Pct||s.Boys_Growth_pct||0)<0).sort((a,b)=>parseFloat(a.Boys_Growth_Pct||a.Boys_Growth_pct||0)-parseFloat(b.Boys_Growth_Pct||b.Boys_Growth_pct||0));
+  const threeYrDeclined=[...allSchools].filter(s=>{
+    const e2223=parseFloat(s.Enroll_2223||0),e2324=parseFloat(s.Enroll_2324||0),e2425=parseFloat(s.Enroll_2425||0),e2526=parseFloat(s.Enroll_2526||0);
+    return e2223>0&&e2324>0&&e2425>0&&e2526>0&&e2324<e2223&&e2425<e2324&&e2526<e2425;
+  }).sort((a,b)=>parseFloat(a.Enroll_2526||0)-parseFloat(b.Enroll_2526||0));
+
+  // ── State Level computed reports ──
+  const trend=D.enrollment_trend||[];
+  const stateTrend=trend.map(t=>({Year:t.year,Total_Enrollment:parseInt(t.total)||0}));
+
+  const stateYoy=[];
+  for(let i=1;i<trend.length;i++){
+    const prev=parseInt(trend[i-1].total)||0,curr=parseInt(trend[i].total)||0;
+    stateYoy.push({Year_Pair:trend[i-1].year+' to '+trend[i].year,Previous_Year:trend[i-1].year,Previous_Enrollment:prev,Current_Year:trend[i].year,Current_Enrollment:curr,Net_Change:curr-prev,Growth_pct:prev>0?((curr-prev)/prev*100).toFixed(2):'NA'});
+  }
+
+  const stateCagr=(()=>{
+    if(trend.length<2) return [];
+    const base=parseInt(trend[0].total)||0,last=parseInt(trend[trend.length-1].total)||0,yrs=trend.length-1;
+    const cagr=base>0?((Math.pow(last/base,1/yrs)-1)*100).toFixed(2):'NA';
+    return [{Base_Year:trend[0].year,Latest_Year:trend[trend.length-1].year,Base_Enrollment:base,Latest_Enrollment:last,Years:yrs,CAGR_pct:cagr,Interpretation:parseFloat(cagr)>0?'Growing at '+cagr+'% per year':'Declining'}];
+  })();
+
+  const stateGender=(()=>{
+    // Compute girls/boys from all_schools per year
+    let girlsRatioSum=0,enroll26Sum=0;
+    allSchools.forEach(s=>{
+      const e=parseFloat(s.Enroll_2526||0),r=parseFloat(s.Girls_Ratio_Current||0);
+      const ratio=r>1?r/100:r;
+      girlsRatioSum+=ratio*e; enroll26Sum+=e;
+    });
+    const stateRatio=enroll26Sum>0?girlsRatioSum/enroll26Sum:0.5;
+    return trend.map(t=>{
+      const total=parseInt(t.total)||0;
+      const girls=Math.round(total*stateRatio);
+      return {Year:t.year,Total_Enrollment:total,Girls_Enrollment:girls,Boys_Enrollment:total-girls,Girls_Ratio_pct:(stateRatio*100).toFixed(1)};
+    });
+  })();
+
+  const stateDeclineCount=[
+    {YoY_Period:'2022-23 to 2023-24',key:'YoY_2223_2324'},
+    {YoY_Period:'2023-24 to 2024-25',key:'YoY_2324_2425'},
+    {YoY_Period:'2024-25 to 2025-26',key:'YoY_2425_2526'},
+  ].map(({YoY_Period,key})=>{
+    const growing=allDists.filter(d=>parseFloat(d[key]||0)>0).length;
+    const declining=allDists.filter(d=>parseFloat(d[key]||0)<0).length;
+    return {YoY_Period,Total_Districts:allDists.length,Growing_Districts:growing,Declining_Districts:declining,Stable_Districts:allDists.length-growing-declining};
+  });
+
+  const stateSchoolType=(D.school_type_data||[]).map(s=>({School_Type:s.School_Type,Class_Range:s.Class_Range,Total_Schools:s.Total_Schools,Enroll_2223:s.Total_Enroll_2223,Enroll_2526:s.Total_Enroll_2526,Growth_pct:s.Overall_Growth_pct,Growing_Schools:s.Growing_Schools,Declining_Schools:s.Declining_Schools}));
+
+  
+  // ── L2 District dynamic reports ──
+  const pf=v=>parseFloat(v||0);
+  const dc=d=>({District:d.District,Total_Schools:d.Total_Schools,Enroll_2223:d.Enroll_2223,Enroll_2324:d.Enroll_2324,Enroll_2425:d.Enroll_2425,Enroll_2526:d.Enroll_2526,Overall_Growth_pct:d.Overall_Growth_pct,YoY_2223_2324:d.YoY_2223_2324,YoY_2324_2425:d.YoY_2324_2425,YoY_2425_2526:d.YoY_2425_2526,Boys_Growth_pct:d.Boys_Growth_pct,Girls_Growth_pct:d.Girls_Growth_pct,District_Health_Tag:d.District_Health_Tag});
+  const bc=b=>({District:b.District,Block:b.Block,Total_Schools:b.Total_Schools,Growth_Schools:b.Growth_Schools,Decline_Schools:b.Decline_Schools,Avg_Growth_pct:b.Avg_Growth_pct,Block_Zone:b.Block_Zone,Girls_Declining_Schools:b.Girls_Declining_Schools,Priority_Action_Flag:b.Priority_Action_Flag});
+  const sc=s=>({school_id:s.school_id,school_name:s.school_name,district:s.district,block:s.block,School_Type:s.School_Type,Enroll_2223:s.Enroll_2223,Enroll_2324:s.Enroll_2324,Enroll_2425:s.Enroll_2425,Enroll_2526:s.Enroll_2526,Overall_Growth_pct:s.Overall_Growth_pct,Stability_Label:s.Stability_Label,Risk_Level:s.Risk_Level,Girls_Ratio_Current:s.Girls_Ratio_Current,Trend_Tag:s.Trend_Tag});
+
+  const distIncreasedYoy=[...allDists].filter(d=>pf(d.YoY_2425_2526)>0).sort((a,b)=>pf(b.YoY_2425_2526)-pf(a.YoY_2425_2526)).map(dc);
+  const distTop10=[...allDists].sort((a,b)=>pf(b.Overall_Growth_pct)-pf(a.Overall_Growth_pct)).slice(0,10).map(dc);
+  const distBottom10=[...allDists].sort((a,b)=>pf(a.Overall_Growth_pct)-pf(b.Overall_Growth_pct)).slice(0,10).map(dc);
+  const dist2yrGrowth=[...allDists].filter(d=>pf(d.YoY_2324_2425)>0&&pf(d.YoY_2425_2526)>0).sort((a,b)=>pf(b.Overall_Growth_pct)-pf(a.Overall_Growth_pct)).map(dc);
+  const dist3yrGrowth=[...allDists].filter(d=>pf(d.YoY_2223_2324)>0&&pf(d.YoY_2324_2425)>0&&pf(d.YoY_2425_2526)>0).sort((a,b)=>pf(b.Overall_Growth_pct)-pf(a.Overall_Growth_pct)).map(dc);
+  const dist2yrDecline=[...allDists].filter(d=>pf(d.YoY_2324_2425)<0&&pf(d.YoY_2425_2526)<0).sort((a,b)=>pf(a.YoY_2425_2526)-pf(b.YoY_2425_2526)).map(dc);
+  const dist3yrDecline=[...allDists].filter(d=>pf(d.YoY_2223_2324)<0&&pf(d.YoY_2324_2425)<0&&pf(d.YoY_2425_2526)<0).sort((a,b)=>pf(a.Overall_Growth_pct)-pf(b.Overall_Growth_pct)).map(dc);
+  const distBoysDecl=[...allDists].filter(d=>pf(d.Boys_Growth_pct)<0).sort((a,b)=>pf(a.Boys_Growth_pct)-pf(b.Boys_Growth_pct)).map(dc);
+  const distGirlsDecl=[...allDists].filter(d=>pf(d.Girls_Growth_pct)<0).sort((a,b)=>pf(a.Girls_Growth_pct)-pf(b.Girls_Growth_pct)).map(dc);
+  const distBothDecl=[...allDists].filter(d=>pf(d.Boys_Growth_pct)<0&&pf(d.Girls_Growth_pct)<0).sort((a,b)=>pf(a.Overall_Growth_pct)-pf(b.Overall_Growth_pct)).map(dc);
+  const distGirlsUpBoysDown=[...allDists].filter(d=>pf(d.Girls_Growth_pct)>0&&pf(d.Boys_Growth_pct)<0).map(dc);
+  const distVolatility=[...allDists].map(d=>({...dc(d),Volatility_Score:(Math.abs(pf(d.YoY_2223_2324)-pf(d.YoY_2324_2425))+Math.abs(pf(d.YoY_2324_2425)-pf(d.YoY_2425_2526))).toFixed(2)})).sort((a,b)=>pf(b.Volatility_Score)-pf(a.Volatility_Score));
+  const distPeak=[...allDists].map(d=>{const yrs={'2022-23':pf(d.Enroll_2223),'2023-24':pf(d.Enroll_2324),'2024-25':pf(d.Enroll_2425),'2025-26':pf(d.Enroll_2526)};const peak=Object.entries(yrs).sort((a,b)=>b[1]-a[1])[0];return {...dc(d),Peak_Year:peak[0],Peak_Enrollment:peak[1]};});
+  const distRecovery=[...allDists].filter(d=>pf(d.YoY_2324_2425)<0&&pf(d.YoY_2425_2526)>0).sort((a,b)=>pf(b.YoY_2425_2526)-pf(a.YoY_2425_2526)).map(dc);
+  const distGenderGap=[...allDists].map(d=>{const gr=pf(d.Girls_Ratio_Current||0);const pct=(gr>1?gr/100:gr)*100;return {...dc(d),Girls_Ratio_pct:pct.toFixed(1),Gender_Category:pct>55?'Girls-Heavy':(pct<45?'Boys-Heavy':'Balanced')};}).sort((a,b)=>pf(b.Girls_Ratio_pct)-pf(a.Girls_Ratio_pct));
+
+  // ── L3 Block dynamic reports ──
+  const blk2yrDecline=[...bh].filter(b=>pf(b.Decline_Schools)>pf(b.Growth_Schools)&&pf(b.Avg_Growth_pct)<0).sort((a,b)=>pf(a.Avg_Growth_pct)-pf(b.Avg_Growth_pct)).map(bc);
+  const blk3yrDecline=[...bh].filter(b=>b.Block_Zone==='RED'&&pf(b.Avg_Growth_pct)<-5).sort((a,b)=>pf(a.Avg_Growth_pct)-pf(b.Avg_Growth_pct)).map(bc);
+  const blkSharp10=[...bh].filter(b=>pf(b.Avg_Growth_pct)<-10).sort((a,b)=>pf(a.Avg_Growth_pct)-pf(b.Avg_Growth_pct)).map(bc);
+  const blkIncreased=[...bh].filter(b=>pf(b.Avg_Growth_pct)>0).sort((a,b)=>pf(b.Avg_Growth_pct)-pf(a.Avg_Growth_pct)).map(bc);
+  const blkTop30=[...bh].sort((a,b)=>pf(b.Avg_Growth_pct)-pf(a.Avg_Growth_pct)).slice(0,30).map(bc);
+  const blkConsistent=[...bh].filter(b=>pf(b.Growth_Schools)>pf(b.Decline_Schools)&&pf(b.Avg_Growth_pct)>0).sort((a,b)=>pf(b.Avg_Growth_pct)-pf(a.Avg_Growth_pct)).map(bc);
+  const blkBoysDecl=[...bh].filter(b=>pf(b.Avg_Growth_pct)<0).sort((a,b)=>pf(a.Avg_Growth_pct)-pf(b.Avg_Growth_pct)).map(bc);
+  const blkGirlsDecl=[...bh].filter(b=>pf(b.Girls_Declining_Schools)>0).sort((a,b)=>pf(b.Girls_Declining_Schools)-pf(a.Girls_Declining_Schools)).map(bc);
+  const blkOrange=[...bh].filter(b=>b.Block_Zone==='ORANGE').sort((a,b)=>pf(a.Avg_Growth_pct)-pf(b.Avg_Growth_pct)).map(bc);
+
+  // ── L4 School dynamic reports ──
+  const sch2yrDecline=[...allSchools].filter(s=>pf(s.Enroll_2526)<pf(s.Enroll_2425)&&pf(s.Enroll_2425)<pf(s.Enroll_2324)).sort((a,b)=>pf(a.Overall_Growth_pct)-pf(b.Overall_Growth_pct)).map(sc);
+  const schSharp20=[...allSchools].filter(s=>pf(s.Enroll_2425)>0&&((pf(s.Enroll_2526)-pf(s.Enroll_2425))/pf(s.Enroll_2425)*100)<-20).sort((a,b)=>((pf(a.Enroll_2526)-pf(a.Enroll_2425))/pf(a.Enroll_2425))-((pf(b.Enroll_2526)-pf(b.Enroll_2425))/pf(b.Enroll_2425))).map(sc);
+  const schIncreased=[...allSchools].filter(s=>pf(s.Enroll_2526)>pf(s.Enroll_2425)).sort((a,b)=>pf(b.Enroll_2526)-pf(a.Enroll_2526)).map(sc);
+  const schTopGrowth=[...allSchools].filter(s=>pf(s.Overall_Growth_pct)>0).sort((a,b)=>pf(b.Overall_Growth_pct)-pf(a.Overall_Growth_pct)).map(sc);
+  const schBothDecl=[...allSchools].filter(s=>pf(s.Enroll_2526)<pf(s.Enroll_2425)&&pf(s.Overall_Growth_pct)<0).sort((a,b)=>pf(a.Overall_Growth_pct)-pf(b.Overall_Growth_pct)).map(sc);
+  const schLow50=[...allSchools].filter(s=>pf(s.Enroll_2526)>0&&pf(s.Enroll_2526)<50).sort((a,b)=>pf(a.Enroll_2526)-pf(b.Enroll_2526)).map(sc);
+  const schStable=[...allSchools].filter(s=>s.Stability_Label==='Stable').sort((a,b)=>pf(b.Enroll_2526)-pf(a.Enroll_2526)).map(sc);
+  const schVolatile=[...allSchools].filter(s=>s.Stability_Label==='Volatile').sort((a,b)=>pf(a.Overall_Growth_pct)-pf(b.Overall_Growth_pct)).map(sc);
+
+  // ── L5 Cross-cutting dynamic reports ──
+  const spikeDropSchools=[...allSchools].filter(s=>pf(s.Enroll_2425)>0&&Math.abs((pf(s.Enroll_2526)-pf(s.Enroll_2425))/pf(s.Enroll_2425)*100)>30).sort((a,b)=>Math.abs(pf(b.Enroll_2526)-pf(b.Enroll_2425))-Math.abs(pf(a.Enroll_2526)-pf(a.Enroll_2425))).map(sc);
+  const missingDataSchools=[...allSchools].filter(s=>(pf(s.Enroll_2223)===0||pf(s.Enroll_2324)===0||pf(s.Enroll_2425)===0)&&pf(s.Enroll_2526)>0).sort((a,b)=>pf(b.Enroll_2526)-pf(a.Enroll_2526)).map(sc);
+  const genderGapSchools=[...allSchools].filter(s=>s.Girls_Imbalance_Flag==='Yes').sort((a,b)=>pf(b.Girls_Ratio_Current)-pf(a.Girls_Ratio_Current)).map(sc);
+
+window.rptData={allDists,distDeclined,blocksDeclined,schoolsDeclined,girlsDeclined,boysDeclined,threeYrDeclined,blockHealth:bh,allSchools,state:[{...kpi,generated_on:m.generated_on}],stateTrend,stateYoy,stateCagr,stateGender,stateDeclineCount,stateSchoolType,distIncreasedYoy,distTop10,distBottom10,dist2yrGrowth,dist3yrGrowth,dist2yrDecline,dist3yrDecline,distBoysDecl,distGirlsDecl,distBothDecl,distGirlsUpBoysDown,distVolatility,distPeak,distRecovery,distGenderGap,blk2yrDecline,blk3yrDecline,blkSharp10,blkIncreased,blkTop30,blkConsistent,blkBoysDecl,blkGirlsDecl,blkOrange,sch2yrDecline,schSharp20,schIncreased,schTopGrowth,schBothDecl,schLow50,schStable,schVolatile,spikeDropSchools,missingDataSchools,genderGapSchools};
+
+  // Update count badges in catalog
+  const upd=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  const redBlocks=bh.filter(b=>b.Block_Zone==='RED');
+  upd('rc-dist-all',  allDists.length+' districts');
+  upd('rc-dist-decl', distDeclined.length+' districts');
+  upd('rc-dist-inc',  (allDists.length-distDeclined.length)+' districts');
+  upd('rc-blk-health',redBlocks.length+' RED blocks');
+  upd('rc-blk-decl',  blocksDeclined.length+' blocks');
+  upd('rc-sch-decl',  schoolsDeclined.length+' schools');
+  upd('rc-girls-decl',girlsDeclined.length+' schools');
+  upd('rc-boys-decl', boysDeclined.length+' schools');
+  upd('rc-3yr-decl',  threeYrDeclined.length+' schools');
+  upd('rc-sch-all',   allSchools.length+' schools');
+  initRptExpand();
+}
+
+// ── Report Row Expand / Preview ────────────────────────────
+function initRptExpand(){
+  document.querySelectorAll('.rpt-ltbl tbody tr[data-rkey]').forEach(function(tr){
+    var nameTd=tr.querySelector('.rname');
+    if(nameTd&&!nameTd.querySelector('.rpt-chev')){
+      nameTd.innerHTML='<span class="rpt-chev">&#9658;</span>'+nameTd.innerHTML;
+    }
+    var exp=document.createElement('tr');
+    exp.className='rpt-exp';
+    exp.style.display='none';
+    exp.innerHTML='<td colspan="5"><div class="rpt-exp-inner"><span class="rpt-pmsg">Loading...</span></div></td>';
+    tr.after(exp);
+    tr.addEventListener('click',function(e){
+      if(e.target.closest('a,button')) return;
+      var open=exp.style.display!=='none';
+      exp.style.display=open?'none':'';
+      var chev=tr.querySelector('.rpt-chev');
+      if(chev) chev.classList.toggle('open',!open);
+      if(!open&&!exp._loaded){
+        exp.querySelector('.rpt-exp-inner').innerHTML=buildRptPreview(tr.dataset.rkey);
+        exp._loaded=true;
+      }
+    });
+  });
+}
+
+function buildRptPreview(key){
+  var D=window.dashboardData;
+  if(!D) return '<span class="rpt-pmsg">Dashboard data not loaded</span>';
+  var dists=D.district_data||[];
+  var blocks=D.block_health||[];
+  var schools=D.all_schools||[];
+  var pf=function(v){return parseFloat(v||0);};
+  var fmtN=function(v){return v?Number(v).toLocaleString():'--';};
+  var fmtP=function(v){var n=parseFloat(v);return isNaN(n)?'--':(n>0?'+':'')+n.toFixed(1)+'%';};
+  var xlMsg='<span class="rpt-pmsg">This is an Excel report — click the Download button to view full data.</span>';
+
+  function ptbl(cols,rows,n){
+    n=n||5;
+    var show=rows.slice(0,n);
+    if(!show.length) return '<span class="rpt-pmsg">No matching records found.</span>';
+    var hdr=cols.map(function(c){return '<th>'+(c.h||c.k)+'</th>';}).join('');
+    var bdy=show.map(function(r){
+      return '<tr>'+cols.map(function(c){
+        var v=r[c.k];
+        return '<td title="'+(v||'')+'">'+((v===null||v===undefined)?'--':v)+'</td>';
+      }).join('')+'</tr>';
+    }).join('');
+    var more=rows.length>n?'<tr><td colspan="'+cols.length+'" style="text-align:center;color:#888;font-style:italic;padding:5px">... '+(rows.length-n)+' more rows — download file for full data</td></tr>':'';
+    return '<table class="rpt-ptbl"><thead><tr>'+hdr+'</tr></thead><tbody>'+bdy+more+'</tbody></table>';
+  }
+
+  var DC=[{k:'District'},{k:'Enroll_2425',h:'2024-25'},{k:'Enroll_2526',h:'2025-26'},{k:'Overall_Growth_pct',h:'4yr%'},{k:'YoY_2425_2526',h:'YoY%'}];
+  var BC=[{k:'District'},{k:'Block'},{k:'Block_Zone',h:'Zone'},{k:'Avg_Growth_pct',h:'Avg%'},{k:'Total_Schools',h:'Schools'}];
+  var SC=[{k:'school_name',h:'School'},{k:'district',h:'District'},{k:'block',h:'Block'},{k:'Enroll_2526',h:'Enroll 25-26'},{k:'Overall_Growth_pct',h:'4yr%'}];
+
+  function fd(rows){return rows.map(function(r){return Object.assign({},r,{Enroll_2425:fmtN(r.Enroll_2425),Enroll_2526:fmtN(r.Enroll_2526),Overall_Growth_pct:fmtP(r.Overall_Growth_pct),YoY_2425_2526:fmtP(r.YoY_2425_2526)});});}
+  function fb(rows){return rows.map(function(r){return Object.assign({},r,{Avg_Growth_pct:fmtP(r.Avg_Growth_pct)});});}
+  function fs(rows){return rows.map(function(r){return Object.assign({},r,{Enroll_2526:fmtN(r.Enroll_2526),Overall_Growth_pct:fmtP(r.Overall_Growth_pct)});});}
+
+  var P={
+    's1_trend':function(){var t=D.enrollment_trend||[];return ptbl([{k:'year',h:'Year'},{k:'total',h:'Total Enrollment'}],t,10);},
+    's1_yoy':function(){var t=D.enrollment_trend||[];var rows=[];for(var i=1;i<t.length;i++){var prev=pf(t[i-1].total),curr=pf(t[i].total);rows.push({Period:(t[i-1].year+' > '+t[i].year),Previous:fmtN(prev),Current:fmtN(curr),Change:fmtN(curr-prev),Growth:fmtP((curr-prev)/prev*100)});}return ptbl([{k:'Period'},{k:'Previous'},{k:'Current'},{k:'Change'},{k:'Growth',h:'Growth%'}],rows,10);},
+    's1_cagr':function(){var t=D.enrollment_trend||[];if(t.length<2)return '<span class="rpt-pmsg">Not enough trend data</span>';var base=pf(t[0].total),last=pf(t[t.length-1].total),yrs=t.length-1;var cagr=((Math.pow(last/base,1/yrs)-1)*100).toFixed(2);return ptbl([{k:'Base_Year',h:'Base Year'},{k:'Latest_Year',h:'Latest Year'},{k:'Base_Enroll',h:'Base Enroll'},{k:'Latest_Enroll',h:'Latest Enroll'},{k:'CAGR'}],[{Base_Year:t[0].year,Latest_Year:t[t.length-1].year,Base_Enroll:fmtN(base),Latest_Enroll:fmtN(last),CAGR:cagr+'%'}],5);},
+    's1_gender':function(){var kpi=D.state_kpis||{};return ptbl([{k:'Metric'},{k:'Value'}],[{Metric:'Girls Declining Schools',Value:kpi.Girls_Declining_Schools||'--'},{Metric:'Total Schools',Value:fmtN(kpi.Total_Schools)},{Metric:'State 4yr Growth',Value:fmtP(kpi.Overall_Growth_4yr||kpi.State_Growth_Pct)},{Metric:'Girls Ratio (State)',Value:kpi.Girls_Ratio_State||'--'}],10);},
+    's1_decline_count':function(){var yrs=[{pair:'2022-23 > 2023-24',k:'YoY_2223_2324'},{pair:'2023-24 > 2024-25',k:'YoY_2324_2425'},{pair:'2024-25 > 2025-26',k:'YoY_2425_2526'}];var rows=yrs.map(function(y){var g=dists.filter(function(d){return pf(d[y.k])>0;}).length;var dc=dists.filter(function(d){return pf(d[y.k])<0;}).length;return {Year:y.pair,Growing:g,Declining:dc,Stable:dists.length-g-dc};});return ptbl([{k:'Year'},{k:'Growing'},{k:'Declining'},{k:'Stable'}],rows,10);},
+    's1_schooltype':function(){var types={};schools.forEach(function(s){var t=s.School_Type||'Unknown';if(!types[t])types[t]={Type:t,Schools:0,Enroll:0};types[t].Schools++;types[t].Enroll+=pf(s.Enroll_2526);});var rows=Object.values(types).sort(function(a,b){return b.Enroll-a.Enroll;}).map(function(r){return Object.assign({},r,{Enroll:fmtN(r.Enroll)});});return ptbl([{k:'Type'},{k:'Schools'},{k:'Enroll',h:'Enroll 2025-26'}],rows,10);},
+    's1_excel':function(){return xlMsg;},
+    'd2_increased_yoy':function(){return ptbl(DC,fd(dists.filter(function(d){return pf(d.YoY_2425_2526)>0;}).sort(function(a,b){return pf(b.YoY_2425_2526)-pf(a.YoY_2425_2526);})));},
+    'd2_decreased_yoy':function(){return ptbl(DC,fd(dists.filter(function(d){return pf(d.YoY_2425_2526)<0;}).sort(function(a,b){return pf(a.YoY_2425_2526)-pf(b.YoY_2425_2526);})));},
+    'd2_top10':function(){return ptbl(DC,fd([].concat(dists).sort(function(a,b){return pf(b.Overall_Growth_pct)-pf(a.Overall_Growth_pct);}).slice(0,10)),10);},
+    'd2_bottom10':function(){return ptbl(DC,fd([].concat(dists).sort(function(a,b){return pf(a.Overall_Growth_pct)-pf(b.Overall_Growth_pct);}).slice(0,10)),10);},
+    'd2_2yr_growth':function(){return ptbl(DC,fd(dists.filter(function(d){return pf(d.YoY_2324_2425)>0&&pf(d.YoY_2425_2526)>0;}).sort(function(a,b){return pf(b.Overall_Growth_pct)-pf(a.Overall_Growth_pct);})));},
+    'd2_3yr_growth':function(){return ptbl(DC,fd(dists.filter(function(d){return pf(d.YoY_2223_2324)>0&&pf(d.YoY_2324_2425)>0&&pf(d.YoY_2425_2526)>0;}).sort(function(a,b){return pf(b.Overall_Growth_pct)-pf(a.Overall_Growth_pct);})));},
+    'd2_2yr_decline':function(){return ptbl(DC,fd(dists.filter(function(d){return pf(d.YoY_2324_2425)<0&&pf(d.YoY_2425_2526)<0;}).sort(function(a,b){return pf(a.YoY_2425_2526)-pf(b.YoY_2425_2526);})));},
+    'd2_3yr_decline':function(){return ptbl(DC,fd(dists.filter(function(d){return pf(d.YoY_2223_2324)<0&&pf(d.YoY_2324_2425)<0&&pf(d.YoY_2425_2526)<0;}).sort(function(a,b){return pf(a.Overall_Growth_pct)-pf(b.Overall_Growth_pct);})));},
+    'd2_boys_decl':function(){return ptbl([{k:'District'},{k:'Boys_Growth_pct',h:'Boys 4yr%'},{k:'Enroll_2526',h:'Enroll 25-26'}],dists.filter(function(d){return pf(d.Boys_Growth_pct)<0;}).sort(function(a,b){return pf(a.Boys_Growth_pct)-pf(b.Boys_Growth_pct);}).map(function(r){return Object.assign({},r,{Boys_Growth_pct:fmtP(r.Boys_Growth_pct),Enroll_2526:fmtN(r.Enroll_2526)});}));},
+    'd2_girls_decl':function(){return ptbl([{k:'District'},{k:'Girls_Growth_pct',h:'Girls 4yr%'},{k:'Enroll_2526',h:'Enroll 25-26'}],dists.filter(function(d){return pf(d.Girls_Growth_pct)<0;}).sort(function(a,b){return pf(a.Girls_Growth_pct)-pf(b.Girls_Growth_pct);}).map(function(r){return Object.assign({},r,{Girls_Growth_pct:fmtP(r.Girls_Growth_pct),Enroll_2526:fmtN(r.Enroll_2526)});}));},
+    'd2_both_decl':function(){return ptbl(DC,fd(dists.filter(function(d){return pf(d.Boys_Growth_pct)<0&&pf(d.Girls_Growth_pct)<0;}).sort(function(a,b){return pf(a.Overall_Growth_pct)-pf(b.Overall_Growth_pct);})));},
+    'd2_girls_up_boys_down':function(){return ptbl([{k:'District'},{k:'Girls_Growth_pct',h:'Girls%'},{k:'Boys_Growth_pct',h:'Boys%'},{k:'Enroll_2526',h:'Enroll 25-26'}],dists.filter(function(d){return pf(d.Girls_Growth_pct)>0&&pf(d.Boys_Growth_pct)<0;}).map(function(r){return Object.assign({},r,{Girls_Growth_pct:fmtP(r.Girls_Growth_pct),Boys_Growth_pct:fmtP(r.Boys_Growth_pct),Enroll_2526:fmtN(r.Enroll_2526)});}));},
+    'd2_volatility':function(){return ptbl([{k:'District'},{k:'YoY_2223_2324',h:'23-24%'},{k:'YoY_2324_2425',h:'24-25%'},{k:'YoY_2425_2526',h:'25-26%'},{k:'Overall_Growth_pct',h:'4yr%'}],dists.map(function(r){return Object.assign({},r,{YoY_2223_2324:fmtP(r.YoY_2223_2324),YoY_2324_2425:fmtP(r.YoY_2324_2425),YoY_2425_2526:fmtP(r.YoY_2425_2526),Overall_Growth_pct:fmtP(r.Overall_Growth_pct)});}));},
+    'd2_peak':function(){var lbls={'2223':'2022-23','2324':'2023-24','2425':'2024-25','2526':'2025-26'};var rows=dists.map(function(d){var yrs={'2223':pf(d.Enroll_2223),'2324':pf(d.Enroll_2324),'2425':pf(d.Enroll_2425),'2526':pf(d.Enroll_2526)};var peak=Object.entries(yrs).sort(function(a,b){return b[1]-a[1];})[0];return {District:d.District,Peak_Year:lbls[peak[0]],Peak_Enroll:fmtN(peak[1]),Current:fmtN(d.Enroll_2526)};});return ptbl([{k:'District'},{k:'Peak_Year',h:'Peak Year'},{k:'Peak_Enroll',h:'Peak Enroll'},{k:'Current',h:'2025-26'}],rows,7);},
+    'd2_recovery':function(){return ptbl(DC,fd(dists.filter(function(d){return pf(d.YoY_2324_2425)<0&&pf(d.YoY_2425_2526)>0;}).sort(function(a,b){return pf(b.YoY_2425_2526)-pf(a.YoY_2425_2526);})));},
+    'd2_gender_gap':function(){var rows=dists.map(function(d){var gr=pf(d.Girls_Ratio_Current||0);var pct=(gr>1?gr/100:gr)*100;var cat=pct>55?'Girls-Heavy':(pct<45?'Boys-Heavy':'Balanced');return {District:d.District,Girls_Pct:pct.toFixed(1)+'%',Category:cat,Enroll_2526:fmtN(d.Enroll_2526)};}).sort(function(a,b){return parseFloat(b.Girls_Pct)-parseFloat(a.Girls_Pct);});return ptbl([{k:'District'},{k:'Girls_Pct',h:'Girls%'},{k:'Category'},{k:'Enroll_2526',h:'Enroll 25-26'}],rows,7);},
+    'd2_all':function(){return ptbl(DC,fd([].concat(dists)));},
+    'b3_declined_yoy':function(){return ptbl(BC,fb(blocks.filter(function(b){return b.Block_Zone==='RED'||b.Block_Zone==='ORANGE';}).sort(function(a,b){return pf(a.Avg_Growth_pct)-pf(b.Avg_Growth_pct);})));},
+    'b3_2yr_decline':function(){return ptbl(BC,fb(blocks.filter(function(b){return pf(b.Decline_Schools)>pf(b.Growth_Schools)&&pf(b.Avg_Growth_pct)<0;}).sort(function(a,b){return pf(a.Avg_Growth_pct)-pf(b.Avg_Growth_pct);})));},
+    'b3_3yr_decline':function(){return ptbl(BC,fb(blocks.filter(function(b){return b.Block_Zone==='RED'&&pf(b.Avg_Growth_pct)<-5;}).sort(function(a,b){return pf(a.Avg_Growth_pct)-pf(b.Avg_Growth_pct);})));},
+    'b3_sharp_10':function(){return ptbl(BC,fb(blocks.filter(function(b){return pf(b.Avg_Growth_pct)<-10;}).sort(function(a,b){return pf(a.Avg_Growth_pct)-pf(b.Avg_Growth_pct);})));},
+    'b3_increased':function(){return ptbl(BC,fb(blocks.filter(function(b){return pf(b.Avg_Growth_pct)>0;}).sort(function(a,b){return pf(b.Avg_Growth_pct)-pf(a.Avg_Growth_pct);})));},
+    'b3_top30':function(){return ptbl(BC,fb([].concat(blocks).sort(function(a,b){return pf(b.Avg_Growth_pct)-pf(a.Avg_Growth_pct);}).slice(0,30)),7);},
+    'b3_consistent_3yr':function(){return ptbl(BC,fb(blocks.filter(function(b){return pf(b.Growth_Schools)>pf(b.Decline_Schools)&&pf(b.Avg_Growth_pct)>0;}).sort(function(a,b){return pf(b.Avg_Growth_pct)-pf(a.Avg_Growth_pct);})));},
+    'b3_boys_decl':function(){return ptbl(BC,fb(blocks.filter(function(b){return pf(b.Avg_Growth_pct)<0;}).sort(function(a,b){return pf(a.Avg_Growth_pct)-pf(b.Avg_Growth_pct);})));},
+    'b3_girls_decl':function(){return ptbl([{k:'District'},{k:'Block'},{k:'Block_Zone',h:'Zone'},{k:'Girls_Declining_Schools',h:'Girls Declining'},{k:'Total_Schools',h:'Schools'}],blocks.filter(function(b){return pf(b.Girls_Declining_Schools)>0;}).sort(function(a,b){return pf(b.Girls_Declining_Schools)-pf(a.Girls_Declining_Schools);}));},
+    'b3_gender_dom':function(){return ptbl([{k:'District'},{k:'Block'},{k:'Avg_Girls_Ratio',h:'Girls Ratio%'},{k:'Block_Zone',h:'Zone'}],blocks.map(function(r){return Object.assign({},r,{Avg_Girls_Ratio:r.Avg_Girls_Ratio?(pf(r.Avg_Girls_Ratio)*100).toFixed(1)+'%':'--'});}));},
+    'b3_red':function(){return ptbl(BC,fb(blocks.filter(function(b){return b.Block_Zone==='RED';}).sort(function(a,b){return pf(a.Avg_Growth_pct)-pf(b.Avg_Growth_pct);})));},
+    'b3_orange':function(){return ptbl(BC,fb(blocks.filter(function(b){return b.Block_Zone==='ORANGE';}).sort(function(a,b){return pf(a.Avg_Growth_pct)-pf(b.Avg_Growth_pct);})));},
+    'b3_risk':function(){return ptbl(BC,fb([].concat(blocks).sort(function(a,b){return pf(a.Avg_Growth_pct)-pf(b.Avg_Growth_pct);})));},
+    'b3_small':function(){return ptbl(BC,fb([].concat(blocks).sort(function(a,b){return pf(a.Total_Schools)-pf(b.Total_Schools);})));},
+    'b3_cluster':function(){return ptbl(BC,fb([].concat(blocks).sort(function(a,b){return pf(a.Avg_Growth_pct)-pf(b.Avg_Growth_pct);})));},
+    's4_declined_yoy':function(){return ptbl(SC,fs(schools.filter(function(s){return pf(s.Enroll_2526)<pf(s.Enroll_2425)&&pf(s.Enroll_2425)>0;}).sort(function(a,b){return (pf(a.Enroll_2526)-pf(a.Enroll_2425))-(pf(b.Enroll_2526)-pf(b.Enroll_2425));})));},
+    's4_2yr_decline':function(){return ptbl(SC,fs(schools.filter(function(s){return pf(s.Enroll_2526)<pf(s.Enroll_2425)&&pf(s.Enroll_2425)<pf(s.Enroll_2324);}).sort(function(a,b){return pf(a.Overall_Growth_pct)-pf(b.Overall_Growth_pct);})));},
+    's4_3yr_decline':function(){return ptbl(SC,fs(schools.filter(function(s){var a=pf(s.Enroll_2223),b=pf(s.Enroll_2324),c=pf(s.Enroll_2425),d=pf(s.Enroll_2526);return a>0&&b>0&&c>0&&d>0&&b<a&&c<b&&d<c;}).sort(function(a,b){return pf(a.Enroll_2526)-pf(b.Enroll_2526);})));},
+    's4_sharp_20':function(){return ptbl(SC,fs(schools.filter(function(s){return pf(s.Enroll_2425)>0&&((pf(s.Enroll_2526)-pf(s.Enroll_2425))/pf(s.Enroll_2425)*100)<-20;}).sort(function(a,b){return ((pf(a.Enroll_2526)-pf(a.Enroll_2425))/pf(a.Enroll_2425))-((pf(b.Enroll_2526)-pf(b.Enroll_2425))/pf(b.Enroll_2425));})));},
+    's4_increased':function(){return ptbl(SC,fs(schools.filter(function(s){return pf(s.Enroll_2526)>pf(s.Enroll_2425);}).sort(function(a,b){return pf(b.Enroll_2526)-pf(a.Enroll_2526);})));},
+    's4_top_growth':function(){return ptbl(SC,fs([].concat(schools).filter(function(s){return pf(s.Overall_Growth_pct)>0;}).sort(function(a,b){return pf(b.Overall_Growth_pct)-pf(a.Overall_Growth_pct);})));},
+    's4_recovery':function(){return ptbl(SC,fs(schools.filter(function(s){return pf(s.Enroll_2425)<pf(s.Enroll_2324)&&pf(s.Enroll_2526)>pf(s.Enroll_2425);}).sort(function(a,b){return pf(b.Enroll_2526)-pf(a.Enroll_2526);})));},
+    's4_boys_decl':function(){return '<span class="rpt-pmsg">Boys decline tracked at district level. Top declining districts by boys growth:</span>'+ptbl([{k:'District'},{k:'Boys_Growth_pct',h:'Boys 4yr%'},{k:'Enroll_2526',h:'Enroll 25-26'}],dists.filter(function(d){return pf(d.Boys_Growth_pct)<0;}).sort(function(a,b){return pf(a.Boys_Growth_pct)-pf(b.Boys_Growth_pct);}).map(function(r){return Object.assign({},r,{Boys_Growth_pct:fmtP(r.Boys_Growth_pct),Enroll_2526:fmtN(r.Enroll_2526)});}));},
+    's4_girls_decl':function(){return ptbl([{k:'school_name',h:'School'},{k:'district',h:'District'},{k:'block',h:'Block'},{k:'Girls_Ratio_Current',h:'Girls%'},{k:'Enroll_2526',h:'Enroll 25-26'}],schools.filter(function(s){return s.Girls_Declining_Flag==='Yes';}).sort(function(a,b){return pf(a.Enroll_2526)-pf(b.Enroll_2526);}).map(function(r){return Object.assign({},r,{Enroll_2526:fmtN(r.Enroll_2526),Girls_Ratio_Current:r.Girls_Ratio_Current?(pf(r.Girls_Ratio_Current)*100).toFixed(1)+'%':'--'});}));},
+    's4_both_decl':function(){return ptbl(SC,fs(schools.filter(function(s){return pf(s.Enroll_2526)<pf(s.Enroll_2425)&&pf(s.Overall_Growth_pct)<0;}).sort(function(a,b){return pf(a.Overall_Growth_pct)-pf(b.Overall_Growth_pct);})));},
+    's4_gender_gap':function(){return ptbl([{k:'school_name',h:'School'},{k:'district',h:'District'},{k:'Girls_Ratio_Current',h:'Girls%'},{k:'Girls_Imbalance_Flag',h:'Imbalance?'},{k:'Enroll_2526',h:'Enroll 25-26'}],schools.filter(function(s){return s.Girls_Imbalance_Flag==='Yes';}).sort(function(a,b){return pf(b.Girls_Ratio_Current)-pf(a.Girls_Ratio_Current);}).map(function(r){return Object.assign({},r,{Enroll_2526:fmtN(r.Enroll_2526),Girls_Ratio_Current:r.Girls_Ratio_Current?(pf(r.Girls_Ratio_Current)*100).toFixed(1)+'%':'--'});}));},
+    's4_high_risk':function(){return ptbl([{k:'school_name',h:'School'},{k:'district',h:'District'},{k:'Risk_Level',h:'Risk'},{k:'Risk_Score',h:'Score'},{k:'Enroll_2526',h:'Enroll 25-26'}],schools.filter(function(s){return s.Risk_Level==='HIGH';}).sort(function(a,b){return pf(b.Risk_Score)-pf(a.Risk_Score);}).map(function(r){return Object.assign({},r,{Enroll_2526:fmtN(r.Enroll_2526)});}));},
+    's4_early_warn':function(){return ptbl([{k:'school_name',h:'School'},{k:'district',h:'District'},{k:'Active_Alerts',h:'Alerts'},{k:'Alert_Count',h:'Count'},{k:'Enroll_2526',h:'Enroll 25-26'}],schools.filter(function(s){return pf(s.Alert_Count)>0;}).sort(function(a,b){return pf(b.Alert_Count)-pf(a.Alert_Count);}).map(function(r){return Object.assign({},r,{Enroll_2526:fmtN(r.Enroll_2526)});}));},
+    's4_low50':function(){return ptbl(SC,fs(schools.filter(function(s){return pf(s.Enroll_2526)>0&&pf(s.Enroll_2526)<50;}).sort(function(a,b){return pf(a.Enroll_2526)-pf(b.Enroll_2526);})));},
+    's4_stable':function(){return ptbl(SC,fs(schools.filter(function(s){return s.Stability_Label==='Stable';}).sort(function(a,b){return pf(b.Enroll_2526)-pf(a.Enroll_2526);})));},
+    's4_volatile':function(){return ptbl(SC,fs(schools.filter(function(s){return s.Stability_Label==='Volatile';}).sort(function(a,b){return pf(a.Overall_Growth_pct)-pf(b.Overall_Growth_pct);})));},
+    's4_all':function(){return ptbl(SC,fs([].concat(schools).sort(function(a,b){return pf(b.Enroll_2526)-pf(a.Enroll_2526);})));},
+    'x5_transition89':function(){return ptbl([{k:'school_name',h:'School'},{k:'district',h:'District'},{k:'Avg_Continuity_Current',h:'Continuity%'},{k:'Low_Continuity_Flag',h:'Low?'},{k:'Enroll_2526',h:'Enroll 25-26'}],schools.filter(function(s){return s.Avg_Continuity_Current;}).sort(function(a,b){return pf(a.Avg_Continuity_Current)-pf(b.Avg_Continuity_Current);}).map(function(r){return Object.assign({},r,{Enroll_2526:fmtN(r.Enroll_2526),Avg_Continuity_Current:r.Avg_Continuity_Current?parseFloat(r.Avg_Continuity_Current).toFixed(1)+'%':'--'});}));},
+    'x5_dropout':function(){return ptbl([{k:'school_name',h:'School'},{k:'district',h:'District'},{k:'Trend_Tag',h:'Trend'},{k:'Risk_Level',h:'Risk'},{k:'Enroll_2526',h:'Enroll 25-26'}],schools.filter(function(s){return s.Risk_Level==='HIGH'||s.Low_Continuity_Flag==='Yes';}).sort(function(a,b){return pf(a.Enroll_2526)-pf(b.Enroll_2526);}).map(function(r){return Object.assign({},r,{Enroll_2526:fmtN(r.Enroll_2526)});}));},
+    'x5_bpl_social':function(){return xlMsg;},
+    'x5_spike_drop':function(){return ptbl(SC,fs(schools.filter(function(s){return pf(s.Enroll_2425)>0&&Math.abs((pf(s.Enroll_2526)-pf(s.Enroll_2425))/pf(s.Enroll_2425)*100)>30;}).sort(function(a,b){return Math.abs(pf(b.Enroll_2526)-pf(b.Enroll_2425))-Math.abs(pf(a.Enroll_2526)-pf(a.Enroll_2425));})));},
+    'x5_missing':function(){return ptbl(SC,fs(schools.filter(function(s){return (pf(s.Enroll_2223)===0||pf(s.Enroll_2324)===0||pf(s.Enroll_2425)===0)&&pf(s.Enroll_2526)>0;}).sort(function(a,b){return pf(b.Enroll_2526)-pf(a.Enroll_2526);})));},
+    'x5_gender_gap_sch':function(){return ptbl([{k:'school_name',h:'School'},{k:'district',h:'District'},{k:'Girls_Ratio_Current',h:'Girls%'},{k:'Girls_Imbalance_Flag',h:'Imbalance?'},{k:'Enroll_2526',h:'Enroll 25-26'}],schools.filter(function(s){return s.Girls_Imbalance_Flag==='Yes';}).sort(function(a,b){return pf(b.Girls_Ratio_Current)-pf(a.Girls_Ratio_Current);}).map(function(r){return Object.assign({},r,{Enroll_2526:fmtN(r.Enroll_2526),Girls_Ratio_Current:r.Girls_Ratio_Current?(pf(r.Girls_Ratio_Current)*100).toFixed(1)+'%':'--'});}));}
+  };
+
+  var fn=P[key];
+  if(!fn) return '<span class="rpt-pmsg">Preview not available for this report. Please download the CSV/Excel file.</span>';
+  try{return fn();}catch(e){console.error('Preview error',key,e);return '<span class="rpt-pmsg">Preview error: '+e.message+'</span>';}
+}
+
+// ── Excel downloads ──────────────────────────────────────────
+function dlXLSec(key){
+  if(!window.XLSX){alert('SheetJS not loaded');return;}
+  if(!window.rptData){renderReport();}
+  const data=window.rptData[key];
+  if(!data||!data.length){alert('No data found. Please open the Report tab first to load the data.');return;}
+  dlXLData(data,key);
+}
+function dlXLReport(){
+  if(!window.XLSX){alert('SheetJS not loaded');return;}
+  const rd=window.rptData||{};
+  const wb=XLSX.utils.book_new();
+  const add=(data,name)=>{if(data&&data.length)XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data),name);};
+  add(rd.state,'State Summary');
+  add(rd.allDists,'All Districts');
+  add(rd.distDeclined,'Districts Declined');
+  add(rd.blocksDeclined,'Blocks Declined');
+  add(rd.schoolsDeclined,'Schools Declined');
+  add(rd.girlsDeclined,'Girls Declined');
+  add(rd.boysDeclined,'Boys Declined');
+  add(rd.threeYrDeclined,'3yr Consecutive Decline');
+  XLSX.writeFile(wb,'enrollment_full_report.xlsx');
+}
+
+// ═══════════════════════════════════════════════════════════
+// SCHOOL DETAIL MODAL
+// ═══════════════════════════════════════════════════════════
+function showModal(sid){
+  if(!sid) return;
+  const D=window.dashboardData;
+  const s=(D.all_schools||[]).find(sc=>(sc.school_id||sc.School_ID||'')===sid||(sc.school_id||sc.School_ID||'')==String(sid));
+  if(!s){
+    // Try numeric match
+    const sn=(D.all_schools||[]).find(sc=>String(sc.school_id||sc.School_ID||'')==String(sid));
+    if(!sn) return;
+    return showModal(String(sn.school_id||sn.School_ID));
+  }
+  document.getElementById('modal-name').textContent=s.school_name||'School Detail';
+  document.getElementById('modal-loc').textContent=[(s.district||s.District),(s.block||s.Block),(s.School_Type)].filter(Boolean).join(' > ');
+
+  const alerts=(D.early_warnings||[]).filter(a=>(a.school_id||a.School_ID)===sid);
+  const enrollData=[
+    {yr:'2022-23',val:parseFloat(s.Enroll_2223)||0},
+    {yr:'2023-24',val:parseFloat(s.Enroll_2324)||0},
+    {yr:'2024-25',val:parseFloat(s.Enroll_2425)||0},
+    {yr:'2025-26',val:parseFloat(s.Enroll_2526)||0},
+  ].filter(r=>r.val>0);
+
+  document.getElementById('modal-body').innerHTML=`
+    <div class="msec">
+      <h3>Enrollment Numbers</h3>
+      <div class="g4" style="margin-bottom:10px">
+        ${enrollData.map(r=>`<div style="text-align:center;padding:8px;background:#f5f7fa;border-radius:8px">
+          <div style="font-size:.68rem;color:var(--text-muted)">${r.yr}</div>
+          <div style="font-size:1.2rem;font-weight:700;color:var(--primary)">${fmtN(r.val)}</div>
+        </div>`).join('')}
+      </div>
+      <div style="height:160px;position:relative"><canvas id="modal-chart"></canvas></div>
+    </div>
+    <div class="g2">
+      <div class="msec">
+        <h3>Risk Profile</h3>
+        <div style="margin-bottom:6px">${riskBadge(s.Risk_Level)} Risk Score: <strong>${s.Risk_Score||'—'}</strong>/16</div>
+        <div style="font-size:.8rem;margin-top:4px">Trend: <strong>${s.Trend_Tag||'—'}</strong></div>
+        <div style="font-size:.8rem;margin-top:4px">Pattern: <strong>${s.Enroll_Pattern_Tag||'—'}</strong></div>
+        <div style="margin-top:8px">${schoolFlags(s)}</div>
+      </div>
+      <div class="msec">
+        <h3>Gender (2025-26)</h3>
+        <div style="font-size:.82rem">Girls Ratio: <strong>${s.Girls_Ratio_2526?parseFloat(s.Girls_Ratio_2526).toFixed(1)+'%':'—'}</strong></div>
+        <div style="font-size:.82rem;margin-top:4px">Class 8→9 Continuity: <strong>${s.Continuity_8_9?parseFloat(s.Continuity_8_9).toFixed(1)+'%':'—'}</strong></div>
+        <div style="font-size:.82rem;margin-top:4px">Model School: <strong>${String(s.Model_School_Flag).toLowerCase()==='true'?'Yes':'No'}</strong></div>
+      </div>
+    </div>
+    ${alerts.length?`<div class="msec"><h3>Alerts (${alerts.length})</h3>
+      <table class="dt"><thead><tr><th>Type</th><th>Severity</th><th>Value</th></tr></thead>
+      <tbody>${alerts.map(a=>`<tr><td>${a.Alert_Type||'—'}</td><td>${riskBadge(a.Alert_Severity)}</td><td>${a.Alert_Value||a.Value||'—'}</td></tr>`).join('')}</tbody>
+      </table></div>`:''}`;
+
+  // Mini chart
+  setTimeout(()=>{
+    mkChart('modal-chart',{type:'bar',data:{
+      labels:enrollData.map(r=>r.yr),
+      datasets:[{label:'Enrollment',data:enrollData.map(r=>r.val),backgroundColor:'rgba(33,150,243,.7)',borderRadius:4}]
+    },options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{y:{ticks:{callback:v=>fmtN(v)},grid:{color:'#f0f4f8'}},x:{grid:{display:false}}}
+    }});
+  },50);
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(){
+  document.getElementById('modal-overlay').classList.remove('open');
+  if(window.charts['modal-chart']) window.charts['modal-chart'].destroy();
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXCEL DOWNLOAD
+// ═══════════════════════════════════════════════════════════
+function dlXL(dataKey, filename){
+  if(!window.XLSX){alert('SheetJS not loaded');return;}
+  const data=window.xlData[dataKey];
+  if(!data||!data.length){alert('No data to download');return;}
+  dlXLData(data,filename);
+}
+function dlXLData(data,filename){
+  if(!window.XLSX){alert('SheetJS not loaded');return;}
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.json_to_sheet(data);
+  XLSX.utils.book_append_sheet(wb,ws,'Data');
+  XLSX.writeFile(wb,(filename||'download')+'.xlsx');
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+function initDashboard(data){
+  window.dashboardData=data;
+  const m=data.metadata||{};
+  document.getElementById('hdr-date').textContent=m.generated_on||'—';
+  document.getElementById('hdr-meta').textContent=`${fmtN(m.total_schools)} schools | ${fmtN(m.total_districts)} districts`;
+
+  // Populate filter dropdowns
+  const fo=data.filter_options||{};
+  const distSel=document.getElementById('f-district');
+  (fo.districts||[]).sort().forEach(d=>{distSel.innerHTML+=`<option value="${d}">${d}</option>`;});
+  // f-type removed from filter bar — skip population
+
+  // Populate block tab district dropdown
+  const blkDistSel=document.getElementById('blk-f-district');
+  if(blkDistSel)(fo.districts||[]).sort().forEach(d=>{blkDistSel.innerHTML+=`<option value="${d}">${d}</option>`;});
+
+  // Init block filters
+  window.blkFilters={district:'',block:''};
+
+  // Tab click events
+  document.querySelectorAll('.tbtn').forEach(btn=>{
+    btn.addEventListener('click',()=>switchTab(btn.dataset.tab));
+  });
+
+  // Initial render
+  renderOverview();
+
+  document.getElementById('loader').classList.add('hidden');
+  document.getElementById('app').style.display='block';
+
+  console.log('Dashboard loaded:',{
+    schools:m.total_schools,districts:m.total_districts,generated:m.generated_on
+  });
+}
+
+// Load data
+fetch('./dashboard_data.json')
+  .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+  .then(data=>initDashboard(data))
+  .catch(err=>{
+    document.getElementById('loader').innerHTML=`<div style="text-align:center;padding:40px;color:#fff">
+      <div style="font-size:2rem;margin-bottom:16px">&#9888;</div>
+      <div style="font-size:1rem;font-weight:600">Error loading data</div>
+      <div style="font-size:.82rem;opacity:.8;margin-top:8px">${err}</div>
+      <div style="font-size:.75rem;opacity:.6;margin-top:8px">Make sure dashboard_data.json is in the same folder.</div>
+    </div>`;
+  });
+</script>
+
+<!-- Footer -->
+<div id="dash-footer" style="background:var(--primary);color:rgba(255,255,255,.75);text-align:center;padding:10px 20px;font-size:.75rem;letter-spacing:.03em"></div>
+
+</body>
+</html>
